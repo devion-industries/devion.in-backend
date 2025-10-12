@@ -47,7 +47,7 @@ export const config = {
   },
   
   cors: {
-    origin: process.env.FRONTEND_URL?.split(',') || ['http://localhost:8086']
+    origin: process.env.FRONTEND_URL?.split(',').map(url => url.trim()) || ['http://localhost:8086']
   },
   
   upload: {
