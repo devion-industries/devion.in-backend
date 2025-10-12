@@ -1,4 +1,6 @@
-# Devion Backend API
+# Devion Backend
+
+**Latest Update:** Stock data populated with 1,999 NSE stocks API
 
 AI-powered financial literacy platform backend built with Node.js, Express, TypeScript, and Supabase.
 
