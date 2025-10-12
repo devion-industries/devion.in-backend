@@ -1,0 +1,41 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Development
+.git
+.gitignore
+.vscode
+.idea
+
+# Testing
+coverage
+*.test.ts
+*.spec.ts
+
+# Documentation
+README.md
+*.md
+docs
+
+# Logs
+logs
+*.log
+
+# Build output (will be created in container)
+dist
+
+# Scripts
+test-*.sh
+*.csv
+
+# OS
+.DS_Store
+Thumbs.db
+
