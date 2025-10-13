@@ -1,243 +1,371 @@
-# Devion Backend
+# 🎯 Devion - AI-Powered Financial Literacy Platform
 
-**Latest Update:** Stock data populated with 1,999 NSE stocks API
+> Transforming teens into confident investors through AI-driven education
 
-AI-powered financial literacy platform backend built with Node.js, Express, TypeScript, and Supabase.
+[![Backend Deploy](https://img.shields.io/badge/Backend-Railway-blueviolet)](https://devion-backend-prod-floral-sun-907-production.up.railway.app)
+[![Frontend Deploy](https://img.shields.io/badge/Frontend-Vercel-black)](https://invested-demo-1jv8p5dg6-shauryaasingh1603-gmailcoms-projects.vercel.app)
+[![License](https://img.shields.io/badge/License-Proprietary-red)]()
 
-## Features
+## 📋 Overview
 
-- 🔐 JWT-based authentication
-- 💰 Virtual portfolio management
-- 📈 Real-time NSE market data (Kite Connect)
-- 🎓 AI-powered learning system (GPT-4 + ElevenLabs)
-- 🎮 Gamification (badges, challenges, leaderboards)
-- 💳 Subscription management (Razorpay)
-- 📧 Email notifications
-- 🔄 Real-time WebSocket updates
+Devion is India's first AI-powered financial literacy platform designed to teach teenagers how to invest through:
+- **Interactive Lessons** - Gamified financial education content
+- **Paper Trading** - Risk-free simulation with ₹10,000 virtual portfolio
+- **AI Tutor** - GPT-5 powered personalized guidance
+- **Voice Learning** - ElevenLabs powered natural voice interactions
+- **Real Market Data** - Live NSE stock prices via Yahoo Finance
 
-## Tech Stack
+## 🏗️ Monorepo Structure
 
-- **Runtime**: Node.js 18+
-- **Framework**: Express.js
-- **Language**: TypeScript
-- **Database**: PostgreSQL (Supabase)
-- **Authentication**: Supabase Auth + JWT
-- **APIs**: Kite Connect, OpenAI GPT-4, ElevenLabs
-- **Payments**: Razorpay
-- **Logging**: Winston
+```
+devion.in-backend/
+├── backend/               # Node.js + Express + TypeScript API
+│   ├── src/
+│   │   ├── config/       # Environment & database config
+│   │   ├── controllers/  # Business logic
+│   │   ├── routes/       # API endpoints
+│   │   ├── services/     # External integrations (AI, Voice, Market)
+│   │   ├── middleware/   # Auth, validation, error handling
+│   │   ├── scripts/      # Utility scripts (stock import, etc.)
+│   │   └── index.ts      # Express server entry
+│   ├── Dockerfile        # Docker container config
+│   ├── package.json      # Backend dependencies
+│   └── tsconfig.json     # TypeScript config
+│
+├── frontend/             # React + TypeScript + Vite
+│   ├── src/
+│   │   ├── components/   # UI components (shadcn/ui)
+│   │   ├── pages/        # Application pages
+│   │   ├── lib/          # API client & utilities
+│   │   ├── hooks/        # React Query hooks
+│   │   └── App.tsx       # Main application
+│   ├── package.json      # Frontend dependencies
+│   ├── vite.config.ts    # Vite bundler config
+│   └── tailwind.config.ts # Tailwind CSS config
+│
+├── README.md             # This file
+└── .gitignore            # Git ignore rules
+```
 
-## Prerequisites
+## 🚀 Quick Start
 
-- Node.js >= 18.0.0
-- npm >= 9.0.0
-- Supabase project
-- Kite Connect API credentials
-- OpenAI API key
-- ElevenLabs API key
-- Razorpay account
+### Prerequisites
+- **Node.js** >= 18.x
+- **npm** >= 9.x
+- **Supabase** account (database)
+- **OpenAI** API key (AI tutor)
+- **ElevenLabs** API key (voice)
 
-## Installation
-
-1. **Clone the repository**
-   ```bash
-   cd Backend/devion-backend
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   ```
-
-4. **Edit `.env` file with your credentials:**
-   - Supabase URL and keys
-   - Kite Connect credentials
-   - OpenAI API key
-   - ElevenLabs API key
-   - Razorpay keys
-   - JWT secret
-
-5. **Database Setup**
-   
-   All database tables are already created via Supabase migrations.
-   The schema includes:
-   - Users & authentication
-   - Portfolios & trading
-   - Market data
-   - Learning content
-   - Gamification
-   - Subscriptions & payments
-
-## Development
+### 1️⃣ Backend Setup
 
 ```bash
-# Run in development mode with hot reload
+cd backend
+
+# Install dependencies
+npm install
+
+# Create .env file
+cp .env.example .env
+# Add your API keys: SUPABASE_URL, SUPABASE_KEY, OPENAI_API_KEY, ELEVENLABS_API_KEY
+
+# Build TypeScript
+npm run build
+
+# Start development server
 npm run dev
+```
+
+Backend runs on **http://localhost:3001**
+
+### 2️⃣ Frontend Setup
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Create .env.local file
+echo "VITE_API_URL=http://localhost:3001/api" > .env.local
+
+# Start development server
+npm run dev
+```
+
+Frontend runs on **http://localhost:8086**
+
+### 3️⃣ Import Stock Data (Required)
+
+```bash
+cd backend
+
+# Import NSE stocks into database
+npm run build
+node dist/scripts/import-nse-stocks.js
+```
+
+This imports **1,999 NSE equity stocks** into your Supabase database.
+
+## 📦 Tech Stack
+
+### Backend
+- **Runtime**: Node.js 20.x
+- **Framework**: Express.js
+- **Language**: TypeScript
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: JWT (jsonwebtoken)
+- **AI Integration**: OpenAI GPT-5
+- **Voice AI**: ElevenLabs
+- **Market Data**: Yahoo Finance (yahoo-finance2)
+- **Logging**: Winston
+- **Security**: Helmet, CORS, Rate Limiting
+
+### Frontend
+- **Framework**: React 18
+- **Language**: TypeScript
+- **Build Tool**: Vite
+- **UI Components**: shadcn/ui + Radix UI
+- **Styling**: Tailwind CSS
+- **State Management**: React Query (TanStack Query)
+- **HTTP Client**: Axios
+- **Routing**: React Router DOM
+- **Animations**: Framer Motion
+- **Notifications**: Sonner (toast)
+
+### Infrastructure
+- **Backend Hosting**: Railway (Mumbai region via Supabase)
+- **Frontend Hosting**: Vercel (Edge Network)
+- **Database**: Supabase (PostgreSQL, Mumbai)
+- **CI/CD**: GitHub Actions → Railway/Vercel
+- **Containerization**: Docker
+
+## 🔐 Environment Variables
+
+### Backend (.env)
+```env
+# Supabase
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_KEY=your_supabase_anon_key
+
+# JWT
+JWT_SECRET=your_super_secret_jwt_key_min_32_chars
+JWT_EXPIRES_IN=7d
+
+# OpenAI (AI Tutor)
+OPENAI_API_KEY=sk-xxxxx
+
+# ElevenLabs (Voice AI)
+ELEVENLABS_API_KEY=xxxxx
+
+# Server
+PORT=3001
+NODE_ENV=development
+```
+
+### Frontend (.env.local)
+```env
+VITE_API_URL=http://localhost:3001/api
+```
+
+## 📡 API Endpoints
+
+### Authentication
+- `POST /api/auth/signup` - User registration
+- `POST /api/auth/login` - User login
+- `GET /api/auth/profile` - Get user profile
+- `PUT /api/auth/profile` - Update profile
+
+### Market Data
+- `GET /api/market/featured` - Get featured stocks (top 500)
+- `GET /api/market/search?q=RELIANCE` - Search stocks
+- `GET /api/market/stock/:symbol` - Get stock details
+- `GET /api/market/history/:symbol` - Historical data
+
+### Portfolio
+- `GET /api/portfolio` - Get user portfolio
+- `GET /api/portfolio/holdings` - Get all holdings
+- `POST /api/portfolio/buy` - Buy stock
+- `POST /api/portfolio/sell` - Sell stock
+- `GET /api/portfolio/trades` - Trade history
+- `PUT /api/portfolio/budget` - Update budget
+
+### AI Tutor
+- `POST /api/ai/ask` - Ask AI a question
+- `GET /api/ai/portfolio-insights` - Get AI portfolio insights
+- `POST /api/ai/explain` - Explain financial concept
+- `GET /api/ai/learning-path` - Get personalized learning path
+
+### Voice AI
+- `POST /api/voice/ask` - Ask question with voice response
+- `POST /api/voice/explain` - Explain concept with voice
+- `GET /api/voice/portfolio-insights` - Narrated portfolio insights
+- `POST /api/voice/tts` - Text-to-speech conversion
+- `GET /api/voice/voices` - List available voices
+
+*Full API documentation in `backend/API_REFERENCE.md`*
+
+## 🗄️ Database Schema
+
+### Core Tables
+- `users` - User accounts & profiles
+- `portfolios` - User portfolios with budget
+- `holdings` - Current stock holdings
+- `trades` - Trade history (buy/sell)
+- `stocks` - NSE stock master data (1,999 stocks)
+- `stock_prices` - Historical price data
+
+### Learning System
+- `lessons` - Educational content
+- `user_progress` - Lesson completion tracking
+- `quizzes` - Quiz questions & answers
+- `quiz_attempts` - User quiz submissions
+
+### Gamification
+- `badges` - Achievement badges
+- `user_badges` - User badge collection
+- `cohorts` - Teacher-led classes
+
+### AI & Voice
+- `voice_sessions` - Voice interaction sessions
+- `voice_interactions` - Individual voice exchanges
+- `user_voice_preferences` - Voice settings per user
+
+*Detailed schema in `backend/DATABASE_SCHEMA.md`*
+
+## 🚢 Deployment
+
+### Backend (Railway)
+```bash
+cd backend
+
+# Push to GitHub main branch
+git add -A
+git commit -m "Update backend"
+git push origin main
+
+# Railway auto-deploys from GitHub
+```
+
+**Production URL**: https://devion-backend-prod-floral-sun-907-production.up.railway.app
+
+### Frontend (Vercel)
+```bash
+cd frontend
+
+# Deploy to production
+vercel --prod
+```
+
+**Production URL**: https://invested-demo-1jv8p5dg6-shauryaasingh1603-gmailcoms-projects.vercel.app
+
+*Full deployment guide in `DEPLOYMENT.md`*
+
+## 📊 Database Import
+
+The platform includes **1,999 NSE equity stocks** imported from `NSE Stocks Equity.csv`:
+
+```bash
+cd backend
+npm run build
+node dist/scripts/import-nse-stocks.js
+```
+
+**Import Summary**:
+- Total stocks: 1,999 equity stocks
+- Featured stocks: Top 500 by market cap
+- Symbols include: RELIANCE, TCS, INFY, HDFC, ICICI, etc.
+
+## 🎓 Features
+
+### ✅ Implemented
+- ✅ User authentication (signup/login/JWT)
+- ✅ Portfolio management (buy/sell/holdings)
+- ✅ Live market data (1,999 NSE stocks)
+- ✅ AI tutor (GPT-5 powered Q&A)
+- ✅ Voice AI (ElevenLabs TTS)
+- ✅ Flexible budget system
+- ✅ Trade history & performance tracking
+- ✅ Real-time stock search
+- ✅ Landing page & onboarding
+- ✅ Dashboard & analytics
+- ✅ Market explorer page
+- ✅ Portfolio page with P&L
+- ✅ Frontend-backend integration
+
+### 🚧 In Progress
+- 🚧 Lessons & quiz system
+- 🚧 Badges & gamification
+- 🚧 Leaderboard
+- 🚧 Cohort management (for teachers)
+- 🚧 Advanced charts & indicators
+
+### 📝 Planned
+- 📝 Subscription tiers (Free/Pro/Ultra)
+- 📝 Payment integration (Razorpay)
+- 📝 Admin dashboard
+- 📝 Email notifications
+- 📝 Mobile app (React Native)
+
+## 🧪 Testing
+
+### Backend Tests
+```bash
+cd backend
+
+# Test all endpoints
+./test-api.sh
+
+# Test specific features
+./test-portfolio.sh
+./test-flexible-budget.sh
+```
+
+### Frontend Tests
+```bash
+cd frontend
+
+# Run linter
+npm run lint
 
 # Build for production
 npm run build
-
-# Run production build
-npm start
-
-# Run tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
 ```
 
-## Project Structure
+## 📱 Platform Status
 
-```
-src/
-├── config/          # Configuration files
-│   ├── env.ts      # Environment variables
-│   └── database.ts # Supabase client
-├── middleware/      # Express middleware
-│   ├── auth.ts     # JWT authentication
-│   ├── errorHandler.ts
-│   └── logger.ts
-├── routes/         # API routes
-│   ├── auth.routes.ts
-│   ├── market.routes.ts
-│   ├── portfolio.routes.ts
-│   ├── lessons.routes.ts
-│   ├── quiz.routes.ts
-│   ├── voice.routes.ts
-│   ├── badges.routes.ts
-│   └── subscription.routes.ts
-├── controllers/    # Route controllers
-├── services/       # Business logic
-├── types/          # TypeScript types
-├── utils/          # Utility functions
-└── index.ts        # Application entry point
-```
+| Component | Status | URL |
+|-----------|--------|-----|
+| **Backend API** | ✅ Live | [Railway](https://devion-backend-prod-floral-sun-907-production.up.railway.app) |
+| **Frontend Web** | ✅ Live | [Vercel](https://invested-demo-1jv8p5dg6-shauryaasingh1603-gmailcoms-projects.vercel.app) |
+| **Database** | ✅ Live | Supabase (Mumbai) |
+| **Stock Data** | ✅ Synced | 1,999 NSE stocks |
+| **AI Tutor** | ✅ Active | GPT-5 (OpenAI) |
+| **Voice AI** | ✅ Active | ElevenLabs |
 
-## API Endpoints
+## 🤝 Contributing
 
-### Authentication
-- `POST /api/auth/signup` - Register new user
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/me` - Get current user (protected)
-- `POST /api/auth/logout` - Logout user (protected)
-- `PATCH /api/auth/profile` - Update profile (protected)
+This is a **proprietary project** by Devion Industries. For collaboration inquiries, contact the team.
 
-### Market
-- `GET /api/market/stocks` - Get all NSE stocks
-- `GET /api/market/stocks/featured` - Get top 500 stocks
-- `GET /api/market/stocks/search?q=query` - Search stocks
-- `GET /api/market/stocks/:symbol` - Get stock details
+## 📄 License
 
-### Portfolio
-- `GET /api/portfolio` - Get user portfolio (protected)
-- `GET /api/portfolio/holdings` - Get holdings (protected)
-- `POST /api/portfolio/buy` - Execute buy order (protected)
-- `POST /api/portfolio/sell` - Execute sell order (protected)
+**Proprietary** - All rights reserved by Devion Industries
 
-### Learning
-- `GET /api/lessons` - Get all lessons (protected)
-- `GET /api/lessons/:id` - Get lesson details (protected)
-- `GET /api/quiz` - Get quizzes (protected)
+## 👥 Team
 
-### Voice AI
-- `POST /api/voice/session/start` - Start voice session (protected)
+**Devion Industries**  
+Building the future of financial literacy in India 🇮🇳
 
-### Gamification
-- `GET /api/badges` - Get user badges (protected)
+---
 
-### Subscriptions
-- `GET /api/subscription/plans` - Get subscription plans
-- `GET /api/subscription/current` - Get current subscription (protected)
+### 📚 Additional Documentation
 
-## Environment Variables
+- `backend/README.md` - Backend specific docs
+- `frontend/README.md` - Frontend specific docs
+- `backend/API_REFERENCE.md` - Complete API documentation
+- `backend/DATABASE_SCHEMA.md` - Database design
+- `DEPLOYMENT.md` - Deployment guide
+- `PLATFORM_STATUS.md` - Detailed platform status
 
-See `.env.example` for all required environment variables.
+---
 
-## Demo vs Production
-
-**Current Status**: This is a demonstration/development version.
-
-**Demo Features**:
-- Static market data seeding
-- Simulated trade execution
-- Test payment processing
-
-**Production TODO**:
-- Enable live Kite Connect market data
-- Implement WebSocket for real-time updates
-- Set up Redis caching
-- Configure production database backups
-- Enable Sentry error tracking
-- Set up CI/CD pipeline
-
-## Security
-
-- All passwords hashed with bcrypt
-- JWT tokens for authentication
-- Rate limiting on API endpoints
-- Input validation with Zod
-- SQL injection protection (parameterized queries)
-- XSS protection with Helmet
-- CORS configured for specific origins
-
-## Deployment
-
-### Recommended Platforms
-- Railway.app
-- Render.com
-- Fly.io
-- Heroku
-
-### Deployment Steps
-1. Set environment variables on platform
-2. Build application: `npm run build`
-3. Start application: `npm start`
-4. Configure health check endpoint: `/health`
-
-## Testing
-
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Generate coverage report
-npm run test:coverage
-```
-
-## Troubleshooting
-
-### Server won't start
-- Check all environment variables are set correctly
-- Verify Supabase URL and keys
-- Ensure database migrations are applied
-
-### Authentication errors
-- Verify JWT secret is set
-- Check Supabase Auth configuration
-- Confirm user exists in database
-
-### Market data not loading
-- Verify Kite Connect credentials
-- Check API rate limits
-- Ensure market is open (trading hours)
-
-## License
-
-ISC
-
-## Contributors
-
-Devion Team
-
-## Support
-
-For issues or questions, contact: support@devion.in
-
+**Made with ❤️ in India** | **Demo Live at Global Fintech Fest** 🚀

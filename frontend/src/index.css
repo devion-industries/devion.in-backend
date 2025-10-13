@@ -1,0 +1,228 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Premium Light Financial Theme */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 163 55% 45%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 221 83% 53%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --success: 163 55% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
+
+    --radius: 1rem;
+
+    /* Financial Data Colors */
+    --gain: 163 55% 45%;
+    --loss: 0 72% 51%;
+    --neutral: 215 16% 47%;
+
+    /* Elevation Shadows */
+    --shadow-sm: 0 2px 8px hsla(222, 47%, 11%, 0.08);
+    --shadow-md: 0 8px 24px hsla(222, 47%, 11%, 0.12);
+    --shadow-lg: 0 16px 48px hsla(222, 47%, 11%, 0.16);
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(221, 83%, 53%) 0%, hsl(221, 83%, 63%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(163, 55%, 45%) 0%, hsl(163, 55%, 55%) 100%);
+    --gradient-surface: radial-gradient(ellipse at top, hsl(210, 40%, 98%) 0%, hsl(0, 0%, 100%) 100%);
+    --gradient-card: radial-gradient(ellipse at top left, hsla(221, 83%, 53%, 0.05) 0%, transparent 60%);
+
+    /* Animations */
+    --transition-smooth: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 280ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 14%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 14%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 163 55% 45%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 221 83% 53%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 210 40% 98%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+
+    --success: 163 55% 45%;
+    --success-foreground: 210 40% 98%;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 221 83% 53%;
+
+    --gain: 163 55% 45%;
+    --loss: 0 72% 51%;
+    --neutral: 215 20% 65%;
+
+    --shadow-sm: 0 2px 8px hsla(0, 0%, 0%, 0.3);
+    --shadow-md: 0 8px 24px hsla(0, 0%, 0%, 0.4);
+    --shadow-lg: 0 16px 48px hsla(0, 0%, 0%, 0.5);
+
+    --gradient-primary: linear-gradient(135deg, hsl(221, 83%, 53%) 0%, hsl(221, 83%, 63%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(163, 55%, 45%) 0%, hsl(163, 55%, 55%) 100%);
+    --gradient-surface: radial-gradient(ellipse at top, hsl(222, 47%, 16%) 0%, hsl(222, 47%, 11%) 100%);
+    --gradient-card: radial-gradient(ellipse at top left, hsla(221, 83%, 53%, 0.1) 0%, transparent 60%);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Tabular numbers for financial data */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Live pulse animation for real-time data */
+  .live-pulse {
+    animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  /* Price change animations */
+  .price-flash-up {
+    animation: flash-gain 300ms ease-out;
+  }
+
+  .price-flash-down {
+    animation: flash-loss 300ms ease-out;
+  }
+
+  @keyframes flash-gain {
+    0% { background-color: hsla(163, 65%, 55%, 0.2); }
+    100% { background-color: transparent; }
+  }
+
+  @keyframes flash-loss {
+    0% { background-color: hsla(0, 78%, 66%, 0.2); }
+    100% { background-color: transparent; }
+  }
+
+  /* Card hover effects */
+  .card-interactive {
+    transition: var(--transition-smooth);
+  }
+
+  .card-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  
+  /* Landing Page Animations */
+  .shadow-glow {
+    box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.3);
+  }
+  
+  .shadow-glow-lg {
+    box-shadow: 0 0 30px -5px hsl(var(--primary) / 0.5);
+  }
+  
+  /* Smooth scrolling for anchor links */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Custom animations */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+  }
+}
