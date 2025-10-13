@@ -6,6 +6,60 @@ import logger from '../utils/logger';
 
 class MarketController {
   /**
+   * Get top 20 stocks with live prices (default view)
+   */
+  async getTopStocks(req: Request, res: Response, next: NextFunction) {
+    try {
+      const limit = parseInt(req.query.limit as string) || 20;
+
+      // Get top stocks (featured stocks first)
+      const { data: stocks, error } = await supabase
+        .from('stocks')
+        .select('*')
+        .eq('is_featured', true)
+        .limit(limit);
+
+      if (error) throw createError('Failed to fetch stocks', 500);
+
+      // Get live prices for these stocks
+      const symbols = stocks.map((s: any) => s.symbol);
+      
+      try {
+        const quotes = await yahooService.getQuote(symbols);
+        
+        // Merge quote data with stock info
+        const stocksWithPrices = stocks.map((stock: any) => {
+          const quote = quotes[`NSE:${stock.symbol}`];
+          
+          if (quote) {
+            return {
+              ...stock,
+              ltp: quote.last_price,
+              change_percent: ((quote.last_price - quote.ohlc.close) / quote.ohlc.close) * 100,
+              volume: quote.volume
+            };
+          }
+          
+          return stock;
+        });
+
+        res.json({
+          data: stocksWithPrices,
+          count: stocks.length
+        });
+      } catch (quoteError) {
+        logger.warn('Failed to fetch live prices, returning stock data without prices');
+        res.json({
+          data: stocks,
+          count: stocks.length
+        });
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Get all NSE stocks with pagination
    */
   async getAllStocks(req: Request, res: Response, next: NextFunction) {
@@ -85,7 +139,7 @@ class MarketController {
   }
 
   /**
-   * Search stocks by symbol or company name
+   * Search stocks by symbol or company name (searches all 2000 stocks)
    */
   async searchStocks(req: Request, res: Response, next: NextFunction) {
     try {
@@ -95,14 +149,57 @@ class MarketController {
         throw createError('Search query must be at least 2 characters', 400);
       }
 
-      const limit = parseInt(req.query.limit as string) || 20;
+      const limit = parseInt(req.query.limit as string) || 50;
 
-      const stocks = await db.searchStocks(query, limit);
+      // Search all stocks in Supabase
+      const { data: stocks, error } = await supabase
+        .from('stocks')
+        .select('*')
+        .or(`symbol.ilike.%${query}%,company_name.ilike.%${query}%`)
+        .limit(limit);
 
-      res.json({
-        data: stocks,
-        count: stocks.length
-      });
+      if (error) throw createError('Failed to search stocks', 500);
+
+      // Get live prices for search results
+      if (stocks && stocks.length > 0) {
+        const symbols = stocks.map((s: any) => s.symbol);
+        
+        try {
+          const quotes = await yahooService.getQuote(symbols);
+          
+          // Merge quote data with stock info
+          const stocksWithPrices = stocks.map((stock: any) => {
+            const quote = quotes[`NSE:${stock.symbol}`];
+            
+            if (quote) {
+              return {
+                ...stock,
+                ltp: quote.last_price,
+                change_percent: ((quote.last_price - quote.ohlc.close) / quote.ohlc.close) * 100,
+                volume: quote.volume
+              };
+            }
+            
+            return stock;
+          });
+
+          res.json({
+            data: stocksWithPrices,
+            count: stocks.length
+          });
+        } catch (quoteError) {
+          logger.warn('Failed to fetch live prices for search results');
+          res.json({
+            data: stocks,
+            count: stocks.length
+          });
+        }
+      } else {
+        res.json({
+          data: [],
+          count: 0
+        });
+      }
     } catch (error) {
       next(error);
     }
