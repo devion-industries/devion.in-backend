@@ -4,20 +4,28 @@ import { yahooService } from '../services/yahoo.service';
 import { createError } from '../middleware/errorHandler';
 import logger from '../utils/logger';
 
+// NIFTY 50 stocks list
+const NIFTY_50_SYMBOLS = [
+  'RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'HINDUNILVR', 'ITC', 'SBIN', 'BHARTIARTL', 'KOTAKBANK',
+  'LT', 'AXISBANK', 'ASIANPAINT', 'MARUTI', 'TITAN', 'SUNPHARMA', 'ULTRACEMCO', 'BAJFINANCE', 'NESTLEIND', 'HCLTECH',
+  'WIPRO', 'ONGC', 'NTPC', 'TATAMOTORS', 'TATASTEEL', 'POWERGRID', 'M&M', 'ADANIENT', 'JSWSTEEL', 'INDUSINDBK',
+  'COALINDIA', 'GRASIM', 'TECHM', 'BAJAJFINSV', 'EICHERMOT', 'HINDALCO', 'BRITANNIA', 'DRREDDY', 'ADANIPORTS', 'CIPLA',
+  'APOLLOHOSP', 'DIVISLAB', 'TATACONSUM', 'HEROMOTOCO', 'BPCL', 'UPL', 'SBILIFE', 'HDFCLIFE', 'LTIM', 'BAJAJ-AUTO'
+];
+
 class MarketController {
   /**
-   * Get top 20 stocks with live prices (default view)
+   * Get NIFTY 50 stocks with live prices (default view)
    */
   async getTopStocks(req: Request, res: Response, next: NextFunction) {
     try {
-      const limit = parseInt(req.query.limit as string) || 20;
+      const limit = parseInt(req.query.limit as string) || 50;
 
-      // Get top stocks (featured stocks first)
+      // Get NIFTY 50 stocks from Supabase
       const { data: stocks, error } = await supabase
         .from('stocks')
         .select('*')
-        .eq('is_featured', true)
-        .limit(limit);
+        .in('symbol', NIFTY_50_SYMBOLS.slice(0, limit));
 
       if (error) throw createError('Failed to fetch stocks', 500);
 
