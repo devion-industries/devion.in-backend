@@ -47,7 +47,13 @@ export const config = {
   },
   
   cors: {
-    origin: process.env.FRONTEND_URL?.split(',') || ['http://localhost:8086']
+    origin: process.env.FRONTEND_URL?.split(',') || [
+      'http://localhost:8086',
+      'http://localhost:5173',
+      'https://www.devion.in',
+      'https://devion.in',
+      'https://invested-demo-1jv8p5dg6-shauryaasingh1603-gmailcoms-projects.vercel.app'
+    ]
   },
   
   upload: {
