@@ -52,7 +52,8 @@ export const config = {
       'http://localhost:5173',
       'https://www.devion.in',
       'https://devion.in',
-      'https://invested-demo-1jv8p5dg6-shauryaasingh1603-gmailcoms-projects.vercel.app'
+      'https://invested-demo-1jv8p5dg6-shauryaasingh1603-gmailcoms-projects.vercel.app',
+      'https://invested-demo-gp1teq3jh-shauryaasingh1603-gmailcoms-projects.vercel.app'
     ]
   },
   
