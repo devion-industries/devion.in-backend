@@ -1,6 +1,8 @@
 import OpenAI from 'openai';
+import { createHash } from 'crypto';
 import { config } from '../config/env';
 import logger from '../utils/logger';
+import { redisService } from './redis.service';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -51,6 +53,15 @@ const TUTOR_SYSTEM_PROMPT = `You are Devion's AI Financial Tutor, a friendly and
 
 Remember: Your goal is to build confident, informed investors who understand WHY they make decisions, not just WHAT to buy.`;
 
+/**
+ * Generate cache key for a question
+ */
+function generateCacheKey(question: string, userId?: string): string {
+  const normalizedQuestion = question.trim().toLowerCase();
+  const hash = createHash('md5').update(normalizedQuestion).digest('hex');
+  return `ai:cache:${hash}`;
+}
+
 class AIService {
   /**
    * Ask the AI tutor a question with optional context about user's portfolio
@@ -63,8 +74,24 @@ class AIService {
       holdings?: Array<{ symbol: string; quantity: number; gainLoss: number }>;
       recentTrades?: Array<{ symbol: string; type: string; quantity: number; price: number }>;
     }
-  ): Promise<{ answer: string; tokensUsed: number }> {
+  ): Promise<{ answer: string; tokensUsed: number; cached?: boolean }> {
     try {
+      // Only cache generic questions (without portfolio context)
+      const shouldCache = !context || (!context.portfolioValue && !context.holdings && !context.recentTrades);
+      
+      // Check cache first for generic questions
+      if (shouldCache && redisService.isReady()) {
+        const cacheKey = generateCacheKey(question, context?.userId);
+        const cachedResponse = await redisService.get(cacheKey);
+        
+        if (cachedResponse) {
+          const parsed = JSON.parse(cachedResponse);
+          logger.info(`AI cache HIT for question: "${question.substring(0, 50)}..."`);
+          return { ...parsed, cached: true };
+        }
+        logger.info(`AI cache MISS for question: "${question.substring(0, 50)}..."`);
+      }
+
       // Build context-aware prompt
       let userContext = '';
       if (context) {
@@ -101,12 +128,21 @@ class AIService {
       const answer = response.choices[0].message.content || 'I apologize, but I encountered an issue generating a response. Please try asking your question again.';
       const tokensUsed = response.usage?.total_tokens || 0;
 
-      logger.info(`AI Tutor response generated - Tokens: ${tokensUsed}, Question: "${question.substring(0, 50)}..."`);
-
-      return {
+      const result = {
         answer: answer.trim(),
         tokensUsed,
       };
+
+      // Cache the response for generic questions (24 hours)
+      if (shouldCache && redisService.isReady()) {
+        const cacheKey = generateCacheKey(question, context?.userId);
+        await redisService.set(cacheKey, JSON.stringify(result), 86400); // 24 hours
+        logger.info(`AI response CACHED for question: "${question.substring(0, 50)}..."`);
+      }
+
+      logger.info(`AI Tutor response generated - Tokens: ${tokensUsed}, Question: "${question.substring(0, 50)}..."`);
+
+      return result;
     } catch (error: any) {
       logger.error('AI Tutor error:', error);
       

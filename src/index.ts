@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { config, validateEnv } from './config/env';
 import logger from './utils/logger';
+import { redisService } from './services/redis.service';
 
 // Middleware imports
 import { errorHandler } from './middleware/errorHandler';
@@ -68,6 +69,12 @@ app.use((req, res) => {
 // Error handler (must be last)
 app.use(errorHandler);
 
+// Initialize Redis connection
+redisService.connect().catch((error) => {
+  logger.error('Failed to connect to Redis:', error);
+  logger.warn('⚠️  Application will continue without Redis caching');
+});
+
 // Start server
 const PORT = config.port;
 app.listen(PORT, () => {
@@ -84,6 +91,19 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
   process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM received, shutting down gracefully...');
+  await redisService.disconnect();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  logger.info('SIGINT received, shutting down gracefully...');
+  await redisService.disconnect();
+  process.exit(0);
 });
 
 export default app;
