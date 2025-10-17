@@ -460,8 +460,8 @@ class LessonsController {
         logger.error('Error counting in-progress lessons:', inProgressError);
       }
 
-      const overallPercentage = totalLessons > 0 
-        ? ((completedLessons || 0) / totalLessons) * 100 
+      const overallPercentage = (totalLessons || 0) > 0 
+        ? ((completedLessons || 0) / (totalLessons || 0)) * 100 
         : 0;
 
       res.json({
