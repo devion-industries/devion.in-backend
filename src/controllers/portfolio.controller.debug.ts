@@ -309,22 +309,19 @@ export async function buyStockDebug(req: AuthRequest, res: Response, next: NextF
     });
     
     res.json({
-      success: true,
       message: 'Stock purchased successfully',
-      data: {
-        trade: {
-          id: trade.id,
-          symbol: stock.symbol,
-          company_name: stock.company_name,
-          quantity: quantity,
-          price: currentPrice,
-          total_cost: totalCost,
-          trade_date: tradeDate
-        },
-        portfolio: {
-          current_cash: newCash,
-          previous_cash: portfolio.current_cash
-        }
+      trade: {
+        id: trade.id,
+        symbol: stock.symbol,
+        company_name: stock.company_name,
+        quantity: quantity,
+        price: currentPrice,
+        total_cost: totalCost,
+        trade_date: tradeDate
+      },
+      portfolio: {
+        current_cash: newCash,
+        cash_spent: totalCost
       }
     });
     
