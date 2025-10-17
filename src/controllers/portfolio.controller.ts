@@ -182,7 +182,7 @@ class PortfolioController {
         const newTotalValue = (existingHolding.avg_buy_price * existingHolding.quantity) + totalCost;
         const newAveragePrice = newTotalValue / newTotalQuantity;
         
-        await supabase
+        const { error: updateError } = await supabase
           .from('holdings')
           .update({
             quantity: newTotalQuantity,
@@ -191,9 +191,14 @@ class PortfolioController {
             last_updated: tradeDate
           })
           .eq('id', existingHolding.id);
+        
+        if (updateError) {
+          logger.error('Update holding error:', updateError);
+          throw createError(`Failed to update holding: ${updateError.message}`, 500);
+        }
       } else {
         // Create new holding
-        await supabase
+        const { error: holdingError } = await supabase
           .from('holdings')
           .insert({
             portfolio_id: portfolio.id,
@@ -204,11 +209,16 @@ class PortfolioController {
             unrealized_pnl: 0,
             last_updated: tradeDate
           });
+        
+        if (holdingError) {
+          logger.error('Create holding error:', holdingError);
+          throw createError(`Failed to create holding: ${holdingError.message}`, 500);
+        }
       }
       
       // Update portfolio cash
       const newCash = portfolio.current_cash - totalCost;
-      await supabase
+      const { error: portfolioError } = await supabase
         .from('portfolios')
         .update({
           current_cash: newCash,
@@ -216,6 +226,11 @@ class PortfolioController {
           updated_at: tradeDate
         })
         .eq('id', portfolio.id);
+      
+      if (portfolioError) {
+        logger.error('Update portfolio error:', portfolioError);
+        throw createError(`Failed to update portfolio: ${portfolioError.message}`, 500);
+      }
       
       logger.info(`User ${userId} bought ${quantity} shares of ${symbol} at ₹${currentPrice}`);
       
