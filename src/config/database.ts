@@ -19,11 +19,11 @@ export const supabaseAdmin = createClient(
   }
 );
 
-// Database helper functions
+// Database helper functions (using supabaseAdmin to bypass RLS)
 export const db = {
   // Users
   async getUser(userId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('id', userId)
@@ -34,7 +34,7 @@ export const db = {
   },
   
   async createUser(userData: any) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('users')
       .insert(userData)
       .select()
@@ -46,7 +46,7 @@ export const db = {
   
   // Portfolios
   async getPortfolio(userId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('portfolios')
       .select('*')
       .eq('user_id', userId)
@@ -57,7 +57,7 @@ export const db = {
   },
   
   async getHoldings(portfolioId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('holdings')
       .select('*')
       .eq('portfolio_id', portfolioId)
@@ -69,7 +69,7 @@ export const db = {
   
   // Stocks
   async getStock(symbol: string) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('stocks')
       .select('*, stock_metadata(*)')
       .eq('symbol', symbol)
@@ -80,7 +80,7 @@ export const db = {
   },
   
   async getFeaturedStocks(limit: number = 500) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('stocks')
       .select('*, stock_metadata(*)')
       .eq('is_featured', true)
@@ -91,7 +91,7 @@ export const db = {
   },
   
   async searchStocks(query: string, limit: number = 20) {
-    const { data, error} = await supabase
+    const { data, error} = await supabaseAdmin
       .from('stocks')
       .select('*, stock_metadata(*)')
       .or(`symbol.ilike.%${query}%,company_name.ilike.%${query}%`)
@@ -103,7 +103,7 @@ export const db = {
   
   // Subscriptions
   async getUserSubscription(userId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('user_subscriptions')
       .select('*, subscription_plans(*)')
       .eq('user_id', userId)
@@ -112,7 +112,7 @@ export const db = {
     
     if (error) {
       // Return free plan if no subscription
-      const { data: freePlan } = await supabase
+      const { data: freePlan } = await supabaseAdmin
         .from('subscription_plans')
         .select('*')
         .eq('name', 'free')
