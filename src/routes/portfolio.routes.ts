@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticate } from '../middleware/auth';
 import { portfolioController } from '../controllers/portfolio.controller';
+import { buyStockDebug } from '../controllers/portfolio.controller.debug';
 
 const router = express.Router();
 
@@ -17,8 +18,8 @@ router.get('/performance', portfolioController.getPerformance);
 router.put('/budget', portfolioController.updateBudget);
 router.get('/budget/history', portfolioController.getBudgetHistory);
 
-// Trading
-router.post('/buy', portfolioController.buyStock);
+// Trading - USING DEBUG VERSION WITH COMPREHENSIVE LOGGING
+router.post('/buy', buyStockDebug);  // Using debug version
 router.post('/sell', portfolioController.sellStock);
 
 export default router;
