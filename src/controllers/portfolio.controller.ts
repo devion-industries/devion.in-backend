@@ -631,7 +631,7 @@ class PortfolioController {
         .from('trades')
         .select('*')
         .eq('portfolio_id', portfolio.id)
-        .order('trade_date', { ascending: true });
+        .order('executed_at', { ascending: true });
       
       // Get current holdings
       const holdings = await db.getHoldings(portfolio.id);
