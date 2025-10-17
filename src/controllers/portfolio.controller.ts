@@ -13,12 +13,61 @@ class PortfolioController {
     try {
       const userId = req.user!.id;
       
+      console.log(`\n📊 [PORTFOLIO] Fetching portfolio for user: ${userId}`);
+      
       // Get portfolio
       const portfolio = await db.getPortfolio(userId);
       
+      console.log(`📊 [PORTFOLIO] Query result:`, portfolio ? 'Found' : 'Not found');
+      
       if (!portfolio) {
-        throw createError('Portfolio not found', 404);
+        console.error(`❌ [PORTFOLIO] No portfolio found for user ${userId}`);
+        
+        // Try to create portfolio if it doesn't exist
+        console.log(`🔧 [PORTFOLIO] Attempting to create portfolio...`);
+        const { data: newPortfolio, error: insertError } = await supabase
+          .from('portfolios')
+          .insert({
+            user_id: userId,
+            budget_amount: 10000,
+            current_cash: 10000,
+            total_value: 10000,
+            custom_budget_enabled: true,
+            budget_set_by: userId
+          })
+          .select()
+          .single();
+        
+        if (insertError || !newPortfolio) {
+          console.error(`❌ [PORTFOLIO] Failed to create portfolio:`, insertError);
+          throw createError('Portfolio not found and could not be created', 404);
+        }
+        
+        console.log(`✅ [PORTFOLIO] Created new portfolio with ₹10,000`);
+        
+        // Return newly created portfolio
+        return res.json({
+          portfolio: {
+            id: newPortfolio.id,
+            user_id: newPortfolio.user_id,
+            budget_amount: 10000,
+            current_cash: 10000,
+            total_value: 10000,
+            total_invested: 0,
+            holdings_value: 0,
+            total_gain_loss: 0,
+            total_gain_loss_percent: 0,
+            holdings_count: 0
+          },
+          holdings: []
+        });
       }
+      
+      console.log(`✅ [PORTFOLIO] Found portfolio:`, {
+        id: portfolio.id,
+        cash: portfolio.current_cash,
+        budget: portfolio.budget_amount
+      });
       
       // Get holdings
       const { data: holdings } = await supabase
