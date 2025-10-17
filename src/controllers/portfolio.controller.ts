@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { db, supabase } from '../config/database';
+import { db, supabaseAdmin as supabase } from '../config/database';
 import { yahooService } from '../services/yahoo.service';
 import { createError } from '../middleware/errorHandler';
 import logger from '../utils/logger';
