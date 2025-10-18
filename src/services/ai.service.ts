@@ -230,22 +230,25 @@ class AIService {
     }
   ): Promise<{ insights: string[]; summary: string }> {
     try {
-      const prompt = `Analyze this student's portfolio and provide 3-4 actionable insights:
+      const prompt = `You are analyzing a student's trading portfolio. Provide 3-4 specific, actionable insights based on the actual data below.
 
-Portfolio Summary:
+Portfolio Data:
 - Total Value: ₹${portfolioData.totalValue.toLocaleString('en-IN')}
 - Overall P&L: ${portfolioData.gainLoss >= 0 ? '+' : ''}₹${portfolioData.gainLoss.toFixed(2)} (${portfolioData.gainLossPercent.toFixed(2)}%)
+- Number of Holdings: ${portfolioData.holdings.length}
 
-Holdings:
-${portfolioData.holdings.map(h => `- ${h.symbol} (${h.name}): ${h.quantity} shares @ ₹${h.currentPrice}, P&L: ${h.gainLossPercent.toFixed(2)}%${h.sector ? `, Sector: ${h.sector}` : ''}`).join('\n')}
+Current Holdings:
+${portfolioData.holdings.map(h => `- ${h.symbol} (${h.name}): ${h.quantity} shares at ₹${h.currentPrice}, Gain/Loss: ${h.gainLossPercent >= 0 ? '+' : ''}${h.gainLossPercent.toFixed(2)}%${h.sector ? `, Sector: ${h.sector}` : ''}`).join('\n')}
 
-Provide insights in this format:
-1. [Insight about diversification or concentration]
-2. [Insight about best/worst performer]
-3. [Insight about sector allocation]
-4. [Actionable recommendation for improvement]
+Provide exactly 3-4 insights as a numbered list. Each insight should be specific to this portfolio's actual data:
+1. Comment on their portfolio concentration or diversification (mention specific stocks or sectors)
+2. Highlight their best or worst performing stock with specific numbers
+3. Analyze their sector allocation if applicable
+4. Give one actionable recommendation for improvement
 
-Then provide a one-sentence summary.`;
+After the insights, provide a brief one-sentence summary of the portfolio's overall health.
+
+Return ONLY the numbered insights and summary, nothing else.`;
 
       const response = await openai.chat.completions.create({
         model: 'gpt-4-turbo-preview',
