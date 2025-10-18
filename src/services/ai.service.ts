@@ -230,25 +230,24 @@ class AIService {
     }
   ): Promise<{ insights: string[]; summary: string }> {
     try {
-      const prompt = `You are analyzing a student's trading portfolio. Provide 3-4 specific, actionable insights based on the actual data below.
+      const prompt = `You are a friendly trading tutor talking to a high school student about their portfolio. Use SIMPLE, easy-to-understand language.
 
-Portfolio Data:
+Student's Portfolio:
 - Total Value: ₹${portfolioData.totalValue.toLocaleString('en-IN')}
-- Overall P&L: ${portfolioData.gainLoss >= 0 ? '+' : ''}₹${portfolioData.gainLoss.toFixed(2)} (${portfolioData.gainLossPercent.toFixed(2)}%)
-- Number of Holdings: ${portfolioData.holdings.length}
+- Profit/Loss: ${portfolioData.gainLoss >= 0 ? '+' : ''}₹${portfolioData.gainLoss.toFixed(2)} (${portfolioData.gainLossPercent.toFixed(2)}%)
+- Stocks Owned: ${portfolioData.holdings.length}
 
-Current Holdings:
-${portfolioData.holdings.map(h => `- ${h.symbol} (${h.name}): ${h.quantity} shares at ₹${h.currentPrice}, Gain/Loss: ${h.gainLossPercent >= 0 ? '+' : ''}${h.gainLossPercent.toFixed(2)}%${h.sector ? `, Sector: ${h.sector}` : ''}`).join('\n')}
+Their Stocks:
+${portfolioData.holdings.map(h => `- ${h.symbol} (${h.name}): ${h.quantity} shares, ${h.gainLossPercent >= 0 ? 'Up' : 'Down'} ${Math.abs(h.gainLossPercent).toFixed(1)}%${h.sector ? `, ${h.sector} sector` : ''}`).join('\n')}
 
-Provide exactly 3-4 insights as a numbered list. Each insight should be specific to this portfolio's actual data:
-1. Comment on their portfolio concentration or diversification (mention specific stocks or sectors)
-2. Highlight their best or worst performing stock with specific numbers
-3. Analyze their sector allocation if applicable
-4. Give one actionable recommendation for improvement
+Give 3 SHORT, SIMPLE tips (one sentence each) using friendly language a teenager understands:
+1. Say something encouraging about their stocks or sectors
+2. Point out their best OR worst performing stock
+3. Give ONE easy action they can take next
 
-After the insights, provide a brief one-sentence summary of the portfolio's overall health.
+Keep it friendly, simple, and motivating. No complex financial jargon. Write like you're texting a friend.
 
-Return ONLY the numbered insights and summary, nothing else.`;
+After the 3 tips, add a SHORT summary sentence (under 15 words).`;
 
       const response = await openai.chat.completions.create({
         model: 'gpt-4-turbo-preview',
@@ -279,12 +278,11 @@ Return ONLY the numbered insights and summary, nothing else.`;
       // Fallback insights
       return {
         insights: [
-          'Your portfolio is diversified across multiple sectors, which helps manage risk.',
-          `Your top performer shows strong momentum - consider monitoring it closely.`,
-          'Regular portfolio reviews help you stay aligned with your investment goals.',
-          'Continue learning about different sectors to make informed decisions.',
+          'Nice start! Having stocks from different sectors helps spread out your risk.',
+          'Keep an eye on your best-performing stock - it\'s doing well!',
+          'Try checking your portfolio regularly to see how your stocks are doing.',
         ],
-        summary: 'Your portfolio demonstrates solid fundamentals with room for optimization.',
+        summary: 'Your portfolio is off to a good start!',
       };
     }
   }
