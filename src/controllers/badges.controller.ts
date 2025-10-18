@@ -9,7 +9,7 @@ class BadgesController {
    * Get all badges with user progress
    * GET /api/badges
    */
-  async getAllBadges(req: AuthRequest, res: Response, next: NextFunction) {
+  getAllBadges = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const userId = req.user!.id;
 
@@ -65,7 +65,7 @@ class BadgesController {
    * Get user's unlocked badges
    * GET /api/badges/unlocked
    */
-  async getUserBadges(req: AuthRequest, res: Response, next: NextFunction) {
+  getUserBadges = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const userId = req.user!.id;
 
@@ -94,7 +94,7 @@ class BadgesController {
    * Check and unlock badges for user
    * POST /api/badges/check
    */
-  async checkAndUnlockBadges(req: AuthRequest, res: Response, next: NextFunction) {
+  checkAndUnlockBadges = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const userId = req.user!.id;
 
@@ -158,7 +158,7 @@ class BadgesController {
   /**
    * Get user statistics for badge progress calculation
    */
-  private async getUserStats(userId: string): Promise<any> {
+  private getUserStats = async (userId: string): Promise<any> => {
     try {
       // Get trade count
       const { count: tradeCount } = await supabase
@@ -292,7 +292,7 @@ class BadgesController {
   /**
    * Check if badge criteria is met
    */
-  private checkBadgeCriteria(criteria: any, stats: any): boolean {
+  private checkBadgeCriteria = (criteria: any, stats: any): boolean => {
     try {
       switch (criteria.type) {
         case 'trade_count':
@@ -349,7 +349,7 @@ class BadgesController {
   /**
    * Calculate badge progress
    */
-  private calculateBadgeProgress(criteria: any, stats: any): { current: number; target: number } {
+  private calculateBadgeProgress = (criteria: any, stats: any): { current: number; target: number } => {
     try {
       switch (criteria.type) {
         case 'trade_count':
