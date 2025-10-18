@@ -29,15 +29,25 @@ class AuthController {
         throw createError('Budget must be between ₹1,000 and ₹1,00,00,000', 400);
       }
       
-      // Create auth user in Supabase Auth (requires email verification)
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      // Create auth user in Supabase Auth (automatically sends verification email)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        email_confirm: false // Require email verification
+        options: {
+          data: {
+            name: name,
+            user_type: accountType
+          },
+          emailRedirectTo: `${process.env.FRONTEND_URL || 'https://invested-demo.vercel.app'}/login`
+        }
       });
       
       if (authError) {
         throw createError(authError.message, 400);
+      }
+      
+      if (!authData.user) {
+        throw createError('Failed to create user', 500);
       }
       
       // Create user profile
@@ -57,7 +67,11 @@ class AuthController {
       
       if (userError) {
         // Rollback auth user if profile creation fails
-        await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+        } catch (deleteError) {
+          logger.error('Failed to rollback user after profile creation error', deleteError);
+        }
         throw createError('Failed to create user profile', 500);
       }
       
