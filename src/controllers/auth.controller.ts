@@ -29,11 +29,11 @@ class AuthController {
         throw createError('Budget must be between ₹1,000 and ₹1,00,00,000', 400);
       }
       
-      // Create auth user in Supabase Auth
+      // Create auth user in Supabase Auth (requires email verification)
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
-        email_confirm: true
+        email_confirm: false // Require email verification
       });
       
       if (authError) {
@@ -89,24 +89,13 @@ class AuthController {
         user_id: user.id
       });
       
-      // Generate JWT token with user_type
-      const token = jwt.sign(
-        { userId: user.id, email: user.email, userType: accountType },
-        config.jwt.secret,
-        { expiresIn: '7d' }
-      );
-      
-      logger.info(`New ${accountType} user registered: ${email}`);
+      logger.info(`New ${accountType} user registered: ${email} - verification email sent`);
       
       res.status(201).json({
-        message: 'User created successfully',
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          user_type: accountType
-        }
+        message: 'Account created successfully. Please check your email to verify your account.',
+        requiresVerification: true,
+        email: email,
+        user_type: accountType
       });
     } catch (error) {
       next(error);
