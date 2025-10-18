@@ -10,16 +10,22 @@ import logger from '../utils/logger';
 class AuthController {
   async signup(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { email, password, name, phone, school, age, initial_budget } = req.body;
+      const { email, password, name, phone, school, age, initial_budget, user_type } = req.body;
       
       // Validate input
       if (!email || !password || !name) {
         throw createError('Email, password, and name are required', 400);
       }
       
-      // Validate budget if provided
-      const budgetAmount = initial_budget || 10000; // Default to ₹10,000
-      if (budgetAmount < 1000 || budgetAmount > 10000000) {
+      // Validate user_type
+      const accountType = user_type || 'student';
+      if (!['student', 'parent', 'teacher'].includes(accountType)) {
+        throw createError('Invalid user type. Must be student, parent, or teacher', 400);
+      }
+      
+      // Validate budget if provided (only for students)
+      const budgetAmount = accountType === 'student' ? (initial_budget || 10000) : 0;
+      if (accountType === 'student' && (budgetAmount < 1000 || budgetAmount > 10000000)) {
         throw createError('Budget must be between ₹1,000 and ₹1,00,00,000', 400);
       }
       
@@ -43,7 +49,8 @@ class AuthController {
           name,
           phone,
           school,
-          age
+          age,
+          user_type: accountType
         })
         .select()
         .single();
@@ -54,21 +61,23 @@ class AuthController {
         throw createError('Failed to create user profile', 500);
       }
       
-      // Create default portfolio with custom budget
-      const { data: freePlan } = await supabase
-        .from('subscription_plans')
-        .select('*')
-        .eq('name', 'free')
-        .single();
-      
-      await supabase.from('portfolios').insert({
-        user_id: user.id,
-        budget_amount: budgetAmount,
-        current_cash: budgetAmount,
-        total_value: budgetAmount,
-        custom_budget_enabled: true,
-        budget_set_by: user.id // User set their own budget
-      });
+      // Create default portfolio only for students
+      if (accountType === 'student') {
+        const { data: freePlan } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('name', 'free')
+          .single();
+        
+        await supabase.from('portfolios').insert({
+          user_id: user.id,
+          budget_amount: budgetAmount,
+          current_cash: budgetAmount,
+          total_value: budgetAmount,
+          custom_budget_enabled: true,
+          budget_set_by: user.id // User set their own budget
+        });
+      }
       
       // Create user settings
       await supabase.from('user_settings').insert({
@@ -80,14 +89,14 @@ class AuthController {
         user_id: user.id
       });
       
-      // Generate JWT token
+      // Generate JWT token with user_type
       const token = jwt.sign(
-        { userId: user.id, email: user.email },
+        { userId: user.id, email: user.email, userType: accountType },
         config.jwt.secret,
         { expiresIn: '7d' }
       );
       
-      logger.info(`New user registered: ${email}`);
+      logger.info(`New ${accountType} user registered: ${email}`);
       
       res.status(201).json({
         message: 'User created successfully',
@@ -95,7 +104,8 @@ class AuthController {
         user: {
           id: user.id,
           email: user.email,
-          name: user.name
+          name: user.name,
+          user_type: accountType
         }
       });
     } catch (error) {
@@ -128,14 +138,14 @@ class AuthController {
         .eq('id', authData.user.id)
         .single();
       
-      // Generate JWT token
+      // Generate JWT token with user_type
       const token = jwt.sign(
-        { userId: user.id, email: user.email },
+        { userId: user.id, email: user.email, userType: user.user_type || 'student' },
         config.jwt.secret,
         { expiresIn: '7d' }
       );
       
-      logger.info(`User logged in: ${email}`);
+      logger.info(`${user.user_type || 'student'} user logged in: ${email}`);
       
       res.json({
         message: 'Login successful',
@@ -143,7 +153,8 @@ class AuthController {
         user: {
           id: user.id,
           email: user.email,
-          name: user.name
+          name: user.name,
+          user_type: user.user_type || 'student'
         }
       });
     } catch (error) {
