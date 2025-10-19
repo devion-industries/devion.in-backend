@@ -157,7 +157,8 @@ class AuthController {
           id: user.id,
           email: user.email,
           name: user.name,
-          user_type: user.user_type || 'student'
+          user_type: user.user_type || 'student',
+          onboarding_completed: user.onboarding_completed || false
         }
       });
     } catch (error) {
@@ -182,6 +183,30 @@ class AuthController {
       
       res.json({
         message: 'Logout successful'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  
+  async completeOnboarding(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .update({ onboarding_completed: true, updated_at: new Date().toISOString() })
+        .eq('id', req.user!.id)
+        .select()
+        .single();
+      
+      if (error) {
+        throw createError('Failed to update onboarding status', 500);
+      }
+      
+      logger.info(`User completed onboarding: ${req.user!.email}`);
+      
+      res.json({
+        message: 'Onboarding completed successfully',
+        user: data
       });
     } catch (error) {
       next(error);
