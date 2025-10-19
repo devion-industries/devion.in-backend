@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { supabase } from '../config/database';
-import { AuthRequest } from '../middleware/auth.middleware';
-import { createError } from '../middleware/error.middleware';
+import { AuthRequest } from '../middleware/auth';
+import { createError } from '../middleware/errorHandler';
 import { generateUniqueCode, isValidCodeFormat } from '../utils/cohortCode';
 import logger from '../utils/logger';
 
