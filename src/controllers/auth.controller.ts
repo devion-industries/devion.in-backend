@@ -19,8 +19,8 @@ class AuthController {
       
       // Validate user_type
       const accountType = user_type || 'student';
-      if (!['student', 'parent', 'teacher'].includes(accountType)) {
-        throw createError('Invalid user type. Must be student, parent, or teacher', 400);
+      if (!['student', 'teacher'].includes(accountType)) {
+        throw createError('Invalid user type. Must be student or teacher', 400);
       }
       
       // Validate budget if provided (only for students)
