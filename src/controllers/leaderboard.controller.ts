@@ -74,7 +74,7 @@ class LeaderboardController {
       });
     } catch (error: any) {
       logger.error('Get global leaderboard error:', error);
-      next(createError(500, 'Failed to fetch global leaderboard'));
+      next(createError('Failed to fetch global leaderboard', 500));
     }
   }
 
@@ -85,7 +85,7 @@ class LeaderboardController {
       const userId = req.user?.id;
 
       if (!cohortId) {
-        return next(createError(400, 'Cohort ID is required'));
+        return next(createError('Cohort ID is required', 400));
       }
 
       // Verify user is member of this cohort
@@ -97,7 +97,7 @@ class LeaderboardController {
         .single();
 
       if (memberError || !membership) {
-        return next(createError(403, 'You are not a member of this cohort'));
+        return next(createError('You are not a member of this cohort', 403));
       }
 
       // Get cohort details
@@ -109,7 +109,7 @@ class LeaderboardController {
           grade,
           subject,
           organization_name,
-          users!cohorts_teacher_id_fkey (
+          teacher:users!cohorts_teacher_id_fkey (
             alias
           )
         `)
@@ -184,14 +184,14 @@ class LeaderboardController {
           grade: cohort.grade,
           subject: cohort.subject,
           organization: cohort.organization_name,
-          teacher: cohort.users?.alias || 'Teacher',
+          teacher: (cohort.teacher as any)?.[0]?.alias || 'Teacher',
           member_count: rankedMembers.length
         },
         leaderboard: rankedMembers
       });
     } catch (error: any) {
       logger.error('Get cohort leaderboard error:', error);
-      next(createError(500, 'Failed to fetch cohort leaderboard'));
+      next(createError('Failed to fetch cohort leaderboard', 500));
     }
   }
 
@@ -279,7 +279,7 @@ class LeaderboardController {
       });
     } catch (error: any) {
       logger.error('Get friends leaderboard error:', error);
-      next(createError(500, 'Failed to fetch friends leaderboard'));
+      next(createError('Failed to fetch friends leaderboard', 500));
     }
   }
 
@@ -338,7 +338,7 @@ class LeaderboardController {
       });
     } catch (error: any) {
       logger.error('Get my rank error:', error);
-      next(createError(500, 'Failed to fetch your rank'));
+      next(createError('Failed to fetch your rank', 500));
     }
   }
 
@@ -349,7 +349,7 @@ class LeaderboardController {
       const { referral_code } = req.body;
 
       if (!referral_code) {
-        return next(createError(400, 'Referral code is required'));
+        return next(createError('Referral code is required', 400));
       }
 
       // Find user with this referral code
@@ -360,11 +360,11 @@ class LeaderboardController {
         .single();
 
       if (friendError || !friend) {
-        return next(createError(404, 'Invalid referral code'));
+        return next(createError('Invalid referral code', 404));
       }
 
       if (friend.id === userId) {
-        return next(createError(400, 'You cannot add yourself as a friend'));
+        return next(createError('You cannot add yourself as a friend', 400));
       }
 
       // Check if friendship already exists
@@ -375,7 +375,7 @@ class LeaderboardController {
         .single();
 
       if (existing) {
-        return next(createError(400, 'You are already friends with this user'));
+        return next(createError('You are already friends with this user', 400));
       }
 
       // Create friendship (auto-accepted)
@@ -399,7 +399,7 @@ class LeaderboardController {
       });
     } catch (error: any) {
       logger.error('Add friend error:', error);
-      next(createError(500, 'Failed to add friend'));
+      next(createError('Failed to add friend', 500));
     }
   }
 
@@ -410,7 +410,7 @@ class LeaderboardController {
       const { friendId } = req.params;
 
       if (!friendId) {
-        return next(createError(400, 'Friend ID is required'));
+        return next(createError('Friend ID is required', 400));
       }
 
       // Delete friendship (either direction)
@@ -427,7 +427,7 @@ class LeaderboardController {
       });
     } catch (error: any) {
       logger.error('Remove friend error:', error);
-      next(createError(500, 'Failed to remove friend'));
+      next(createError('Failed to remove friend', 500));
     }
   }
 
@@ -476,7 +476,7 @@ class LeaderboardController {
       });
     } catch (error: any) {
       logger.error('Get friends error:', error);
-      next(createError(500, 'Failed to fetch friends'));
+      next(createError('Failed to fetch friends', 500));
     }
   }
 }
