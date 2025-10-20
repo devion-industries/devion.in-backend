@@ -18,15 +18,12 @@ class LeaderboardController {
           alias,
           created_at,
           portfolios (
-            current_value,
-            initial_balance,
+            total_value,
+            budget_amount,
             updated_at
           ),
           user_badges (
             id
-          ),
-          user_stats (
-            login_streak
           )
         `)
         .eq('user_type', 'student')
@@ -38,8 +35,8 @@ class LeaderboardController {
       const rankedUsers = users
         .map((user: any) => {
           const portfolio = user.portfolios?.[0];
-          const currentValue = portfolio?.current_value || 0;
-          const initialBalance = portfolio?.initial_balance || 10000;
+          const currentValue = portfolio?.total_value || 0;
+          const initialBalance = portfolio?.budget_amount || 10000;
           const portfolioReturn = ((currentValue - initialBalance) / initialBalance) * 100;
 
           return {
@@ -47,7 +44,7 @@ class LeaderboardController {
             alias: user.alias || 'Anonymous',
             portfolio_return: parseFloat(portfolioReturn.toFixed(2)),
             badges_count: user.user_badges?.length || 0,
-            login_streak: user.user_stats?.[0]?.login_streak || 0,
+            login_streak: 0, // TODO: Add user_stats table for login streak tracking
             last_updated: portfolio?.updated_at || user.created_at
           };
         })
@@ -127,15 +124,12 @@ class LeaderboardController {
             id,
             alias,
             portfolios (
-              current_value,
-              initial_balance,
+              total_value,
+              budget_amount,
               updated_at
             ),
             user_badges (
               id
-            ),
-            user_stats (
-              login_streak
             )
           )
         `)
@@ -149,8 +143,8 @@ class LeaderboardController {
         .map((member: any) => {
           const user = member.users;
           const portfolio = user.portfolios?.[0];
-          const currentValue = portfolio?.current_value || 0;
-          const initialBalance = portfolio?.initial_balance || 10000;
+          const currentValue = portfolio?.total_value || 0;
+          const initialBalance = portfolio?.budget_amount || 10000;
           const portfolioReturn = ((currentValue - initialBalance) / initialBalance) * 100;
 
           return {
@@ -158,7 +152,7 @@ class LeaderboardController {
             alias: user.alias || 'Anonymous',
             portfolio_return: parseFloat(portfolioReturn.toFixed(2)),
             badges_count: user.user_badges?.length || 0,
-            login_streak: user.user_stats?.[0]?.login_streak || 0,
+            login_streak: 0, // TODO: Add user_stats table for login streak tracking
             is_me: user.id === userId
           };
         })
@@ -227,15 +221,12 @@ class LeaderboardController {
           id,
           alias,
           portfolios (
-            current_value,
-            initial_balance,
+            total_value,
+            budget_amount,
             updated_at
           ),
           user_badges (
             id
-          ),
-          user_stats (
-            login_streak
           )
         `)
         .in('id', allUserIds);
@@ -246,8 +237,8 @@ class LeaderboardController {
       const rankedFriends = users
         .map((user: any) => {
           const portfolio = user.portfolios?.[0];
-          const currentValue = portfolio?.current_value || 0;
-          const initialBalance = portfolio?.initial_balance || 10000;
+          const currentValue = portfolio?.total_value || 0;
+          const initialBalance = portfolio?.budget_amount || 10000;
           const portfolioReturn = ((currentValue - initialBalance) / initialBalance) * 100;
 
           return {
@@ -255,7 +246,7 @@ class LeaderboardController {
             alias: user.alias || 'Anonymous',
             portfolio_return: parseFloat(portfolioReturn.toFixed(2)),
             badges_count: user.user_badges?.length || 0,
-            login_streak: user.user_stats?.[0]?.login_streak || 0,
+            login_streak: 0, // TODO: Add user_stats table for login streak tracking
             is_me: user.id === userId
           };
         })
@@ -296,14 +287,11 @@ class LeaderboardController {
           alias,
           referral_code,
           portfolios (
-            current_value,
-            initial_balance
+            total_value,
+            budget_amount
           ),
           user_badges (
             id
-          ),
-          user_stats (
-            login_streak
           )
         `)
         .eq('id', userId)
@@ -312,8 +300,8 @@ class LeaderboardController {
       if (userError) throw userError;
 
       const portfolio = user.portfolios?.[0];
-      const currentValue = portfolio?.current_value || 0;
-      const initialBalance = portfolio?.initial_balance || 10000;
+      const currentValue = portfolio?.total_value || 0;
+      const initialBalance = portfolio?.budget_amount || 10000;
       const portfolioReturn = ((currentValue - initialBalance) / initialBalance) * 100;
 
       // Get global rank - count users with better returns
@@ -321,7 +309,7 @@ class LeaderboardController {
         .from('users')
         .select('id', { count: 'exact', head: true })
         .eq('user_type', 'student')
-        .gte('portfolios.current_value', currentValue);
+        .gte('portfolios.total_value', currentValue);
 
       const globalRank = (betterUsers || 0) + 1;
 
@@ -332,7 +320,7 @@ class LeaderboardController {
           alias: user.alias || 'Anonymous',
           portfolio_return: parseFloat(portfolioReturn.toFixed(2)),
           badges_count: user.user_badges?.length || 0,
-          login_streak: user.user_stats?.[0]?.login_streak || 0,
+          login_streak: 0, // TODO: Add user_stats table for login streak tracking
           referral_code: user.referral_code
         }
       });
