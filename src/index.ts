@@ -21,6 +21,7 @@ import voiceRoutes from './routes/voice.routes';
 import badgesRoutes from './routes/badges.routes';
 import subscriptionRoutes from './routes/subscription.routes';
 import cohortRoutes from './routes/cohort.routes';
+import leaderboardRoutes from './routes/leaderboard.routes';
 
 // Validate environment variables
 try {
@@ -62,6 +63,7 @@ app.use('/api/voice', voiceRoutes);
 app.use('/api/badges', badgesRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/cohorts', cohortRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
 
 // 404 handler
 app.use((req, res) => {
