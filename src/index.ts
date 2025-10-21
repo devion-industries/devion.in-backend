@@ -64,6 +64,7 @@ app.use('/api/badges', badgesRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/cohorts', cohortRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/user', require('./routes/user.routes').default);
 
 // 404 handler
 app.use((req, res) => {
