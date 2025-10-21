@@ -304,19 +304,50 @@ class LeaderboardController {
       const initialBalance = portfolio?.budget_amount || 10000;
       const portfolioReturn = ((currentValue - initialBalance) / initialBalance) * 100;
 
-      // Get global rank - count users with better returns
-      const { count: betterUsers, error: rankError } = await supabase
+      // Calculate global rank by fetching all students and comparing
+      // (We need to do this in memory since Supabase doesn't support filtering on nested relations)
+      const { data: allStudents, error: studentsError } = await supabase
         .from('users')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_type', 'student')
-        .gte('portfolios.total_value', currentValue);
+        .select(`
+          id,
+          portfolios!portfolios_user_id_fkey (
+            total_value,
+            budget_amount
+          ),
+          user_badges!user_badges_user_id_fkey (
+            id
+          )
+        `)
+        .eq('user_type', 'student');
 
-      const globalRank = (betterUsers || 0) + 1;
+      if (studentsError) throw studentsError;
+
+      // Calculate returns for all students
+      const studentsWithReturns = allStudents.map((s: any) => {
+        const p = s.portfolios?.[0];
+        const val = p?.total_value || 0;
+        const initial = p?.budget_amount || 10000;
+        const ret = ((val - initial) / initial) * 100;
+        return {
+          id: s.id,
+          return: ret,
+          badges: s.user_badges?.length || 0
+        };
+      });
+
+      // Sort by return (descending), then by badges
+      studentsWithReturns.sort((a: any, b: any) => {
+        if (b.return !== a.return) return b.return - a.return;
+        return b.badges - a.badges;
+      });
+
+      // Find user's rank
+      const globalRank = studentsWithReturns.findIndex((s: any) => s.id === userId) + 1;
 
       res.json({
         success: true,
         my_rank: {
-          rank: globalRank,
+          rank: globalRank || 1,
           alias: user.alias || 'Anonymous',
           portfolio_return: parseFloat(portfolioReturn.toFixed(2)),
           badges_count: user.user_badges?.length || 0,
