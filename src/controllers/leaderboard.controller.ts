@@ -9,76 +9,26 @@ class LeaderboardController {
   async getGlobalLeaderboard(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const limit = parseInt(req.query.limit as string) || 50;
+      const userId = req.user?.id;
 
-      // Get all users with their portfolio stats
-      const { data: users, error } = await supabase
-        .from('users')
-        .select(`
-          id,
-          alias,
-          created_at,
-          portfolios (
-            total_value,
-            budget_amount,
-            updated_at
-          ),
-          user_badges (
-            id
-          )
-        `)
-        .eq('user_type', 'student')
-        .limit(limit);
+      // Direct SQL query to get all data in one go
+      const { data, error } = await supabase.rpc('get_global_leaderboard', {
+        user_limit: limit,
+        current_user_id: userId
+      });
 
       if (error) {
-        logger.error('Supabase error fetching users:', error);
-        throw error;
+        logger.error('Error fetching global leaderboard:', error);
+        throw createError('Failed to fetch leaderboard data', 500);
       }
-
-      if (!users) {
-        throw new Error('No users data returned from database');
-      }
-
-      // Calculate returns and rank users
-      const rankedUsers = users
-        .map((user: any) => {
-          const portfolio = user.portfolios?.[0];
-          const currentValue = portfolio?.total_value || 0;
-          const initialBalance = portfolio?.budget_amount || 10000;
-          const portfolioReturn = ((currentValue - initialBalance) / initialBalance) * 100;
-
-          return {
-            user_id: user.id,
-            alias: user.alias || 'Anonymous',
-            portfolio_return: parseFloat(portfolioReturn.toFixed(2)),
-            badges_count: user.user_badges?.length || 0,
-            login_streak: 0, // TODO: Add user_stats table for login streak tracking
-            last_updated: portfolio?.updated_at || user.created_at
-          };
-        })
-        .sort((a: any, b: any) => {
-          // Primary: portfolio return
-          if (b.portfolio_return !== a.portfolio_return) {
-            return b.portfolio_return - a.portfolio_return;
-          }
-          // Tiebreaker: badges
-          if (b.badges_count !== a.badges_count) {
-            return b.badges_count - a.badges_count;
-          }
-          // Tiebreaker: streak
-          return b.login_streak - a.login_streak;
-        })
-        .map((user: any, index: number) => ({
-          ...user,
-          rank: index + 1
-        }));
 
       res.json({
         success: true,
-        leaderboard: rankedUsers
+        leaderboard: data || []
       });
     } catch (error: any) {
-      logger.error('Get global leaderboard error:', error);
-      next(createError('Failed to fetch global leaderboard', 500));
+      logger.error('Global leaderboard error:', error);
+      next(error);
     }
   }
 
@@ -92,93 +42,48 @@ class LeaderboardController {
         return next(createError('Cohort ID is required', 400));
       }
 
-      // Verify user is member of this cohort
+      // Verify membership
       const { data: membership, error: memberError } = await supabase
         .from('cohort_members')
         .select('id')
         .eq('cohort_id', cohortId)
         .eq('user_id', userId)
+        .eq('status', 'active')
         .single();
 
       if (memberError || !membership) {
         return next(createError('You are not a member of this cohort', 403));
       }
 
-      // Get cohort details
+      // Get cohort info
       const { data: cohort, error: cohortError } = await supabase
         .from('cohorts')
-        .select(`
-          id,
-          name,
-          grade,
-          subject,
-          organization_name,
-          teacher:users!cohorts_teacher_id_fkey (
-            alias
-          )
-        `)
+        .select('id, name, grade, subject, organization_name, teacher_id')
         .eq('id', cohortId)
         .single();
 
-      if (cohortError) throw cohortError;
-
-      // Get all members with their stats
-      const { data: members, error: membersError } = await supabase
-        .from('cohort_members')
-        .select(`
-          user_id,
-          users (
-            id,
-            alias,
-            portfolios (
-              total_value,
-              budget_amount,
-              updated_at
-            ),
-            user_badges (
-              id
-            )
-          )
-        `)
-        .eq('cohort_id', cohortId)
-        .eq('status', 'active');
-
-      if (membersError) {
-        logger.error('Supabase error fetching cohort members:', membersError);
-        throw membersError;
+      if (cohortError) {
+        logger.error('Error fetching cohort:', cohortError);
+        throw createError('Cohort not found', 404);
       }
 
-      // Calculate rankings
-      const rankedMembers = members
-        .map((member: any) => {
-          const user = member.users;
-          const portfolio = user.portfolios?.[0];
-          const currentValue = portfolio?.total_value || 0;
-          const initialBalance = portfolio?.budget_amount || 10000;
-          const portfolioReturn = ((currentValue - initialBalance) / initialBalance) * 100;
+      // Get teacher name
+      const { data: teacher } = await supabase
+        .from('users')
+        .select('alias, name')
+        .eq('id', cohort.teacher_id)
+        .single();
 
-          return {
-            user_id: user.id,
-            alias: user.alias || 'Anonymous',
-            portfolio_return: parseFloat(portfolioReturn.toFixed(2)),
-            badges_count: user.user_badges?.length || 0,
-            login_streak: 0, // TODO: Add user_stats table for login streak tracking
-            is_me: user.id === userId
-          };
-        })
-        .sort((a: any, b: any) => {
-          if (b.portfolio_return !== a.portfolio_return) {
-            return b.portfolio_return - a.portfolio_return;
-          }
-          if (b.badges_count !== a.badges_count) {
-            return b.badges_count - a.badges_count;
-          }
-          return b.login_streak - a.login_streak;
-        })
-        .map((user: any, index: number) => ({
-          ...user,
-          rank: index + 1
-        }));
+      // Get leaderboard data
+      const { data, error } = await supabase.rpc('get_cohort_leaderboard', {
+        p_cohort_id: cohortId,
+        current_user_id: userId
+      });
+
+      if (error) {
+        logger.error('Error fetching cohort leaderboard:', error);
+        throw createError('Failed to fetch cohort leaderboard', 500);
+      }
 
       res.json({
         success: true,
@@ -188,195 +93,83 @@ class LeaderboardController {
           grade: cohort.grade,
           subject: cohort.subject,
           organization: cohort.organization_name,
-          teacher: (cohort.teacher as any)?.[0]?.alias || 'Teacher',
-          member_count: rankedMembers.length
+          teacher: teacher?.alias || teacher?.name || 'Unknown',
+          member_count: data?.length || 0
         },
-        leaderboard: rankedMembers
+        leaderboard: data || []
       });
     } catch (error: any) {
-      logger.error('Get cohort leaderboard error:', error);
-      next(createError('Failed to fetch cohort leaderboard', 500));
+      logger.error('Cohort leaderboard error:', error);
+      next(error);
     }
   }
 
-  // Get friends leaderboard
+  // Get friends leaderboard rankings
   async getFriendsLeaderboard(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
 
-      // Get user's friends (both directions)
-      const { data: friendships, error } = await supabase
-        .from('friendships')
-        .select(`
-          friend_id,
-          user_id
-        `)
-        .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
-        .eq('status', 'accepted');
+      const { data, error } = await supabase.rpc('get_friends_leaderboard', {
+        current_user_id: userId
+      });
 
-      if (error) throw error;
-
-      // Extract friend IDs
-      const friendIds = friendships.map((f: any) => 
-        f.user_id === userId ? f.friend_id : f.user_id
-      );
-
-      // Include current user in the list
-      const allUserIds = [userId, ...friendIds];
-
-      // Get stats for all users
-      const { data: users, error: usersError } = await supabase
-        .from('users')
-        .select(`
-          id,
-          alias,
-          portfolios (
-            total_value,
-            budget_amount,
-            updated_at
-          ),
-          user_badges (
-            id
-          )
-        `)
-        .in('id', allUserIds);
-
-      if (usersError) {
-        logger.error('Supabase error fetching friends:', usersError);
-        throw usersError;
+      if (error) {
+        logger.error('Error fetching friends leaderboard:', error);
+        throw createError('Failed to fetch friends leaderboard', 500);
       }
-
-      // Calculate rankings
-      const rankedFriends = users
-        .map((user: any) => {
-          const portfolio = user.portfolios?.[0];
-          const currentValue = portfolio?.total_value || 0;
-          const initialBalance = portfolio?.budget_amount || 10000;
-          const portfolioReturn = ((currentValue - initialBalance) / initialBalance) * 100;
-
-          return {
-            user_id: user.id,
-            alias: user.alias || 'Anonymous',
-            portfolio_return: parseFloat(portfolioReturn.toFixed(2)),
-            badges_count: user.user_badges?.length || 0,
-            login_streak: 0, // TODO: Add user_stats table for login streak tracking
-            is_me: user.id === userId
-          };
-        })
-        .sort((a: any, b: any) => {
-          if (b.portfolio_return !== a.portfolio_return) {
-            return b.portfolio_return - a.portfolio_return;
-          }
-          if (b.badges_count !== a.badges_count) {
-            return b.badges_count - a.badges_count;
-          }
-          return b.login_streak - a.login_streak;
-        })
-        .map((user: any, index: number) => ({
-          ...user,
-          rank: index + 1
-        }));
 
       res.json({
         success: true,
-        leaderboard: rankedFriends
+        leaderboard: data || []
       });
     } catch (error: any) {
-      logger.error('Get friends leaderboard error:', error);
-      next(createError('Failed to fetch friends leaderboard', 500));
+      logger.error('Friends leaderboard error:', error);
+      next(error);
     }
   }
 
-  // Get current user's rank across all leaderboards
+  // Get current user's rank
   async getMyRank(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
 
-      // Get user's stats
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .select(`
-          id,
-          alias,
-          referral_code,
-          portfolios (
-            total_value,
-            budget_amount
-          ),
-          user_badges (
-            id
-          )
-        `)
-        .eq('id', userId)
-        .single();
-
-      if (userError) {
-        logger.error('Supabase error fetching user:', userError);
-        throw userError;
-      }
-
-      const portfolio = user.portfolios?.[0];
-      const currentValue = portfolio?.total_value || 0;
-      const initialBalance = portfolio?.budget_amount || 10000;
-      const portfolioReturn = ((currentValue - initialBalance) / initialBalance) * 100;
-
-      // Calculate global rank by fetching all students and comparing
-      // (We need to do this in memory since Supabase doesn't support filtering on nested relations)
-      const { data: allStudents, error: studentsError } = await supabase
-        .from('users')
-        .select(`
-          id,
-          portfolios (
-            total_value,
-            budget_amount
-          ),
-          user_badges (
-            id
-          )
-        `)
-        .eq('user_type', 'student');
-
-      if (studentsError) {
-        logger.error('Supabase error fetching all students:', studentsError);
-        throw studentsError;
-      }
-
-      // Calculate returns for all students
-      const studentsWithReturns = allStudents.map((s: any) => {
-        const p = s.portfolios?.[0];
-        const val = p?.total_value || 0;
-        const initial = p?.budget_amount || 10000;
-        const ret = ((val - initial) / initial) * 100;
-        return {
-          id: s.id,
-          return: ret,
-          badges: s.user_badges?.length || 0
-        };
+      const { data, error } = await supabase.rpc('get_my_rank', {
+        current_user_id: userId
       });
 
-      // Sort by return (descending), then by badges
-      studentsWithReturns.sort((a: any, b: any) => {
-        if (b.return !== a.return) return b.return - a.return;
-        return b.badges - a.badges;
-      });
+      if (error) {
+        logger.error('Error fetching my rank:', error);
+        throw createError('Failed to fetch your rank', 500);
+      }
 
-      // Find user's rank
-      const globalRank = studentsWithReturns.findIndex((s: any) => s.id === userId) + 1;
+      if (!data || data.length === 0) {
+        // Return default data for new users
+        const { data: userData } = await supabase
+          .from('users')
+          .select('alias, referral_code')
+          .eq('id', userId)
+          .single();
+
+        return res.json({
+          success: true,
+          my_rank: {
+            rank: 1,
+            alias: userData?.alias || 'Anonymous',
+            portfolio_return: 0.00,
+            badges_count: 0,
+            login_streak: 0,
+            referral_code: userData?.referral_code || ''
+          }
+        });
+      }
 
       res.json({
         success: true,
-        my_rank: {
-          rank: globalRank || 1,
-          alias: user.alias || 'Anonymous',
-          portfolio_return: parseFloat(portfolioReturn.toFixed(2)),
-          badges_count: user.user_badges?.length || 0,
-          login_streak: 0, // TODO: Add user_stats table for login streak tracking
-          referral_code: user.referral_code
-        }
+        my_rank: data[0]
       });
     } catch (error: any) {
       logger.error('Get my rank error:', error);
-      next(createError('Failed to fetch your rank', 500));
+      next(error);
     }
   }
 
@@ -390,11 +183,11 @@ class LeaderboardController {
         return next(createError('Referral code is required', 400));
       }
 
-      // Find user with this referral code
+      // Find friend by referral code
       const { data: friend, error: friendError } = await supabase
         .from('users')
-        .select('id, alias')
-        .eq('referral_code', referral_code.toUpperCase())
+        .select('id, alias, name')
+        .eq('referral_code', referral_code)
         .single();
 
       if (friendError || !friend) {
@@ -405,7 +198,7 @@ class LeaderboardController {
         return next(createError('You cannot add yourself as a friend', 400));
       }
 
-      // Check if friendship already exists
+      // Check if already friends
       const { data: existing } = await supabase
         .from('friendships')
         .select('id')
@@ -416,28 +209,30 @@ class LeaderboardController {
         return next(createError('You are already friends with this user', 400));
       }
 
-      // Create friendship (auto-accepted)
+      // Add friendship (bidirectional)
       const { error: insertError } = await supabase
         .from('friendships')
-        .insert({
-          user_id: userId,
-          friend_id: friend.id,
-          status: 'accepted'
-        });
+        .insert([
+          { user_id: userId, friend_id: friend.id, status: 'accepted' },
+          { user_id: friend.id, friend_id: userId, status: 'accepted' }
+        ]);
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        logger.error('Error adding friend:', insertError);
+        throw createError('Failed to add friend', 500);
+      }
 
       res.json({
         success: true,
-        message: `Added ${friend.alias} as a friend!`,
+        message: 'Friend added successfully',
         friend: {
           id: friend.id,
-          alias: friend.alias
+          alias: friend.alias || friend.name || 'Anonymous'
         }
       });
     } catch (error: any) {
       logger.error('Add friend error:', error);
-      next(createError('Failed to add friend', 500));
+      next(error);
     }
   }
 
@@ -451,13 +246,16 @@ class LeaderboardController {
         return next(createError('Friend ID is required', 400));
       }
 
-      // Delete friendship (either direction)
+      // Delete both directions of friendship
       const { error } = await supabase
         .from('friendships')
         .delete()
         .or(`and(user_id.eq.${userId},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${userId})`);
 
-      if (error) throw error;
+      if (error) {
+        logger.error('Error removing friend:', error);
+        throw createError('Failed to remove friend', 500);
+      }
 
       res.json({
         success: true,
@@ -465,31 +263,27 @@ class LeaderboardController {
       });
     } catch (error: any) {
       logger.error('Remove friend error:', error);
-      next(createError('Failed to remove friend', 500));
+      next(error);
     }
   }
 
-  // Get user's friends list
+  // Get friends list
   async getFriends(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
 
       const { data: friendships, error } = await supabase
         .from('friendships')
-        .select(`
-          friend_id,
-          user_id,
-          created_at
-        `)
-        .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
+        .select('friend_id')
+        .eq('user_id', userId)
         .eq('status', 'accepted');
 
-      if (error) throw error;
+      if (error) {
+        logger.error('Error fetching friends:', error);
+        throw createError('Failed to fetch friends', 500);
+      }
 
-      // Get friend user details
-      const friendIds = friendships.map((f: any) => 
-        f.user_id === userId ? f.friend_id : f.user_id
-      );
+      const friendIds = friendships.map(f => f.friend_id);
 
       if (friendIds.length === 0) {
         return res.json({
@@ -500,24 +294,26 @@ class LeaderboardController {
 
       const { data: friends, error: friendsError } = await supabase
         .from('users')
-        .select('id, alias')
+        .select('id, alias, name')
         .in('id', friendIds);
 
-      if (friendsError) throw friendsError;
+      if (friendsError) {
+        logger.error('Error fetching friend details:', friendsError);
+        throw createError('Failed to fetch friend details', 500);
+      }
 
       res.json({
         success: true,
-        friends: friends.map((f: any) => ({
+        friends: friends.map(f => ({
           id: f.id,
-          alias: f.alias || 'Anonymous'
+          alias: f.alias || f.name || 'Anonymous'
         }))
       });
     } catch (error: any) {
       logger.error('Get friends error:', error);
-      next(createError('Failed to fetch friends', 500));
+      next(error);
     }
   }
 }
 
 export default new LeaderboardController();
-
