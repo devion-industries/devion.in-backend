@@ -17,19 +17,26 @@ class LeaderboardController {
           id,
           alias,
           created_at,
-          portfolios!portfolios_user_id_fkey (
+          portfolios (
             total_value,
             budget_amount,
             updated_at
           ),
-          user_badges!user_badges_user_id_fkey (
+          user_badges (
             id
           )
         `)
         .eq('user_type', 'student')
         .limit(limit);
 
-      if (error) throw error;
+      if (error) {
+        logger.error('Supabase error fetching users:', error);
+        throw error;
+      }
+
+      if (!users) {
+        throw new Error('No users data returned from database');
+      }
 
       // Calculate returns and rank users
       const rankedUsers = users
@@ -120,15 +127,15 @@ class LeaderboardController {
         .from('cohort_members')
         .select(`
           user_id,
-          users!cohort_members_user_id_fkey (
+          users (
             id,
             alias,
-            portfolios!portfolios_user_id_fkey (
+            portfolios (
               total_value,
               budget_amount,
               updated_at
             ),
-            user_badges!user_badges_user_id_fkey (
+            user_badges (
               id
             )
           )
@@ -136,7 +143,10 @@ class LeaderboardController {
         .eq('cohort_id', cohortId)
         .eq('status', 'active');
 
-      if (membersError) throw membersError;
+      if (membersError) {
+        logger.error('Supabase error fetching cohort members:', membersError);
+        throw membersError;
+      }
 
       // Calculate rankings
       const rankedMembers = members
@@ -220,18 +230,21 @@ class LeaderboardController {
         .select(`
           id,
           alias,
-          portfolios!portfolios_user_id_fkey (
+          portfolios (
             total_value,
             budget_amount,
             updated_at
           ),
-          user_badges!user_badges_user_id_fkey (
+          user_badges (
             id
           )
         `)
         .in('id', allUserIds);
 
-      if (usersError) throw usersError;
+      if (usersError) {
+        logger.error('Supabase error fetching friends:', usersError);
+        throw usersError;
+      }
 
       // Calculate rankings
       const rankedFriends = users
@@ -286,18 +299,21 @@ class LeaderboardController {
           id,
           alias,
           referral_code,
-          portfolios!portfolios_user_id_fkey (
+          portfolios (
             total_value,
             budget_amount
           ),
-          user_badges!user_badges_user_id_fkey (
+          user_badges (
             id
           )
         `)
         .eq('id', userId)
         .single();
 
-      if (userError) throw userError;
+      if (userError) {
+        logger.error('Supabase error fetching user:', userError);
+        throw userError;
+      }
 
       const portfolio = user.portfolios?.[0];
       const currentValue = portfolio?.total_value || 0;
@@ -310,17 +326,20 @@ class LeaderboardController {
         .from('users')
         .select(`
           id,
-          portfolios!portfolios_user_id_fkey (
+          portfolios (
             total_value,
             budget_amount
           ),
-          user_badges!user_badges_user_id_fkey (
+          user_badges (
             id
           )
         `)
         .eq('user_type', 'student');
 
-      if (studentsError) throw studentsError;
+      if (studentsError) {
+        logger.error('Supabase error fetching all students:', studentsError);
+        throw studentsError;
+      }
 
       // Calculate returns for all students
       const studentsWithReturns = allStudents.map((s: any) => {
