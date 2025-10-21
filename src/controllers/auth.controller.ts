@@ -141,6 +141,16 @@ class AuthController {
         .eq('id', authData.user.id)
         .single();
       
+      // Update login streak for students
+      if (user.user_type === 'student') {
+        try {
+          await supabase.rpc('update_login_streak', { p_user_id: user.id });
+        } catch (streakError) {
+          logger.error('Failed to update login streak:', streakError);
+          // Don't fail login if streak update fails
+        }
+      }
+      
       // Generate JWT token with user_type
       const token = jwt.sign(
         { userId: user.id, email: user.email, userType: user.user_type || 'student' },
