@@ -146,7 +146,7 @@ class LeaderboardController {
         // Return default data for new users
         const { data: userData } = await supabase
           .from('users')
-          .select('alias, referral_code')
+          .select('alias, name, referral_code')
           .eq('id', userId)
           .single();
 
@@ -154,7 +154,7 @@ class LeaderboardController {
           success: true,
           my_rank: {
             rank: 1,
-            alias: userData?.alias || 'Anonymous',
+            alias: userData?.alias || userData?.name || 'User',
             portfolio_return: 0.00,
             badges_count: 0,
             login_streak: 0,
@@ -227,7 +227,7 @@ class LeaderboardController {
         message: 'Friend added successfully',
         friend: {
           id: friend.id,
-          alias: friend.alias || friend.name || 'Anonymous'
+          alias: friend.alias || friend.name || 'User'
         }
       });
     } catch (error: any) {
@@ -306,7 +306,7 @@ class LeaderboardController {
         success: true,
         friends: friends.map(f => ({
           id: f.id,
-          alias: f.alias || f.name || 'Anonymous'
+          alias: f.alias || f.name || 'User'
         }))
       });
     } catch (error: any) {
