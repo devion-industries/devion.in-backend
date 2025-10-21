@@ -17,12 +17,12 @@ class LeaderboardController {
           id,
           alias,
           created_at,
-          portfolios (
+          portfolios!portfolios_user_id_fkey (
             total_value,
             budget_amount,
             updated_at
           ),
-          user_badges (
+          user_badges!user_badges_user_id_fkey (
             id
           )
         `)
@@ -120,15 +120,15 @@ class LeaderboardController {
         .from('cohort_members')
         .select(`
           user_id,
-          users (
+          users!cohort_members_user_id_fkey (
             id,
             alias,
-            portfolios (
+            portfolios!portfolios_user_id_fkey (
               total_value,
               budget_amount,
               updated_at
             ),
-            user_badges (
+            user_badges!user_badges_user_id_fkey (
               id
             )
           )
@@ -220,12 +220,12 @@ class LeaderboardController {
         .select(`
           id,
           alias,
-          portfolios (
+          portfolios!portfolios_user_id_fkey (
             total_value,
             budget_amount,
             updated_at
           ),
-          user_badges (
+          user_badges!user_badges_user_id_fkey (
             id
           )
         `)
@@ -286,11 +286,11 @@ class LeaderboardController {
           id,
           alias,
           referral_code,
-          portfolios (
+          portfolios!portfolios_user_id_fkey (
             total_value,
             budget_amount
           ),
-          user_badges (
+          user_badges!user_badges_user_id_fkey (
             id
           )
         `)
