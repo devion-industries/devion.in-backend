@@ -68,9 +68,28 @@ class UserController {
       } = req.body;
 
       // Validate alias if provided
-      if (alias !== undefined) {
-        if (alias && (alias.length < 2 || alias.length > 50)) {
-          return next(createError('Alias must be between 2 and 50 characters', 400));
+      if (alias !== undefined && alias) {
+        // Trim alias
+        const trimmedAlias = alias.trim();
+        
+        if (trimmedAlias.length < 2 || trimmedAlias.length > 50) {
+          return next(createError('Display name must be between 2 and 50 characters', 400));
+        }
+
+        // Check if alias is available
+        const { data: isAvailable, error: checkError } = await supabase
+          .rpc('is_alias_available', {
+            p_alias: trimmedAlias,
+            p_user_id: userId
+          });
+
+        if (checkError) {
+          logger.error('Error checking alias availability:', checkError);
+          throw createError('Failed to validate display name', 500);
+        }
+
+        if (!isAvailable) {
+          return next(createError('This display name is already taken. Please choose another one.', 409));
         }
       }
 
@@ -288,6 +307,48 @@ class UserController {
       });
     } catch (error: any) {
       logger.error('Data export error:', error);
+      next(error);
+    }
+  }
+
+  // Check if alias is available
+  async checkAliasAvailability(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { alias } = req.query;
+      const userId = req.user?.id;
+
+      if (!alias || typeof alias !== 'string') {
+        return next(createError('Alias parameter is required', 400));
+      }
+
+      const trimmedAlias = alias.trim();
+
+      if (trimmedAlias.length < 2 || trimmedAlias.length > 50) {
+        return res.json({
+          success: true,
+          available: false,
+          message: 'Display name must be between 2 and 50 characters'
+        });
+      }
+
+      const { data: isAvailable, error } = await supabase
+        .rpc('is_alias_available', {
+          p_alias: trimmedAlias,
+          p_user_id: userId
+        });
+
+      if (error) {
+        logger.error('Error checking alias availability:', error);
+        throw createError('Failed to check alias availability', 500);
+      }
+
+      res.json({
+        success: true,
+        available: isAvailable,
+        message: isAvailable ? 'Display name is available' : 'This display name is already taken'
+      });
+    } catch (error: any) {
+      logger.error('Check alias availability error:', error);
       next(error);
     }
   }

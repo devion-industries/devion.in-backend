@@ -201,18 +201,54 @@ class AuthController {
   
   async completeOnboarding(req: AuthRequest, res: Response, next: NextFunction) {
     try {
+      const { alias } = req.body;
+      const userId = req.user!.id;
+      
+      const updateData: any = {
+        onboarding_completed: true,
+        updated_at: new Date().toISOString()
+      };
+
+      // Validate and set alias if provided
+      if (alias) {
+        const trimmedAlias = alias.trim();
+        
+        if (trimmedAlias.length < 2 || trimmedAlias.length > 50) {
+          return next(createError('Display name must be between 2 and 50 characters', 400));
+        }
+
+        // Check if alias is available
+        const { data: isAvailable, error: checkError } = await supabase
+          .rpc('is_alias_available', {
+            p_alias: trimmedAlias,
+            p_user_id: userId
+          });
+
+        if (checkError) {
+          logger.error('Error checking alias availability:', checkError);
+          throw createError('Failed to validate display name', 500);
+        }
+
+        if (!isAvailable) {
+          return next(createError('This display name is already taken. Please choose another one.', 409));
+        }
+
+        updateData.alias = trimmedAlias;
+      }
+
       const { data, error } = await supabase
         .from('users')
-        .update({ onboarding_completed: true, updated_at: new Date().toISOString() })
-        .eq('id', req.user!.id)
+        .update(updateData)
+        .eq('id', userId)
         .select()
         .single();
       
       if (error) {
+        logger.error('Error completing onboarding:', error);
         throw createError('Failed to update onboarding status', 500);
       }
       
-      logger.info(`User completed onboarding: ${req.user!.email}`);
+      logger.info(`User completed onboarding: ${req.user!.email}${alias ? ` with alias: ${trimmedAlias}` : ''}`);
       
       res.json({
         message: 'Onboarding completed successfully',

@@ -10,6 +10,7 @@ router.use(authenticate);
 // Profile routes
 router.get('/profile', userController.getProfile.bind(userController));
 router.patch('/profile', userController.updateProfile.bind(userController));
+router.get('/check-alias', userController.checkAliasAvailability.bind(userController));
 
 // Settings routes
 router.patch('/notifications', userController.updateNotifications.bind(userController));
