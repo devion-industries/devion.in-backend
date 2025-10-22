@@ -17,6 +17,23 @@ class AuthController {
         throw createError('Email, password, and name are required', 400);
       }
       
+      // Validate name length
+      const trimmedName = name.trim();
+      if (trimmedName.length < 2 || trimmedName.length > 100) {
+        throw createError('Name must be between 2 and 100 characters', 400);
+      }
+      
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw createError('Invalid email format', 400);
+      }
+      
+      // Validate password length
+      if (password.length < 6) {
+        throw createError('Password must be at least 6 characters', 400);
+      }
+      
       // Validate user_type
       const accountType = user_type || 'student';
       if (!['student', 'teacher'].includes(accountType)) {
@@ -56,7 +73,7 @@ class AuthController {
         .insert({
           id: authData.user.id,
           email,
-          name,
+          name: trimmedName,
           phone,
           school,
           age,
