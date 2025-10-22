@@ -210,7 +210,9 @@ class PortfolioController {
           quantity: quantity,
           price: currentPrice,
           total_amount: totalCost,
-          executed_at: tradeDate
+          executed_at: tradeDate,
+          created_at: tradeDate,  // Add created_at for frontend compatibility
+          timestamp: tradeDate     // Add timestamp for frontend compatibility
         })
         .select()
         .single();
@@ -379,7 +381,9 @@ class PortfolioController {
           quantity: quantity,
           price: currentPrice,
           total_amount: totalRevenue,
-          executed_at: tradeDate
+          executed_at: tradeDate,
+          created_at: tradeDate,  // Add created_at for frontend compatibility
+          timestamp: tradeDate     // Add timestamp for frontend compatibility
         })
         .select()
         .single();
