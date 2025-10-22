@@ -114,7 +114,7 @@ function generateCacheKey(question: string, userId?: string): string {
 
 class AIService {
   /**
-   * Ask the AI tutor a question with optional context about user's portfolio
+   * Ask the AI tutor a question with optional context about user's portfolio and current lesson
    */
   async askTutor(
     question: string,
@@ -137,6 +137,15 @@ class AIService {
         gainLossPercent: number;
       }>;
       recentTrades?: Array<{ symbol: string; type: string; quantity: number; price: number; when: string }>;
+    },
+    lessonContext?: {
+      lessonId?: string;
+      lessonTitle?: string;
+      lessonNumber?: number;
+      moduleTitle?: string;
+      currentCardIndex?: number;
+      totalCards?: number;
+      cardContent?: string;
     }
   ): Promise<{ answer: string; tokensUsed: number; cached?: boolean }> {
     try {
@@ -218,6 +227,32 @@ class AIService {
         userContext += `\nUse this portfolio data to give personalized, contextual advice. Reference their actual holdings, sectors, P&L, and trading activity when relevant.`;
       }
 
+      // Add lesson context if available
+      let lessonContextStr = '';
+      if (lessonContext && lessonContext.lessonTitle) {
+        lessonContextStr = `\n\n===== LESSON CONTEXT =====\n`;
+        lessonContextStr += `\nThe student is currently learning:\n`;
+        lessonContextStr += `📚 Module: ${lessonContext.moduleTitle || 'N/A'}\n`;
+        lessonContextStr += `📖 Lesson ${lessonContext.lessonNumber}: ${lessonContext.lessonTitle}\n`;
+        
+        if (lessonContext.currentCardIndex !== undefined && lessonContext.currentCardIndex >= 0) {
+          lessonContextStr += `📄 Card: ${lessonContext.currentCardIndex + 1} of ${lessonContext.totalCards}\n`;
+          if (lessonContext.cardContent) {
+            lessonContextStr += `\nCurrent card preview: "${lessonContext.cardContent}..."\n`;
+          }
+        } else if (lessonContext.currentCardIndex === -1) {
+          lessonContextStr += `📝 Currently taking the quiz for this lesson\n`;
+        }
+        
+        lessonContextStr += `\n==========================\n`;
+        lessonContextStr += `\nIMPORTANT: The student's question is related to this lesson. Give answers that:
+1. Connect to the specific lesson topic they're learning
+2. Reference concepts from this lesson when relevant
+3. Help clarify confusing parts of the lesson
+4. Encourage them to apply what they're learning
+5. Keep explanations aligned with their current learning level in this module\n`;
+      }
+
       const response = await openai.chat.completions.create({
         model: 'gpt-4-turbo-preview', // Using GPT-4 Turbo for better performance
         messages: [
@@ -227,7 +262,7 @@ class AIService {
           },
           {
             role: 'user',
-            content: `${question}${userContext}`,
+            content: `${question}${lessonContextStr}${userContext}`,
           },
         ],
         temperature: 0.7, // Balanced creativity and consistency

@@ -13,7 +13,7 @@ class AIController {
   async askQuestion(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
-      const { question } = req.body;
+      const { question, lessonContext } = req.body;
 
       if (!question || question.trim().length === 0) {
         throw createError('Question is required', 400);
@@ -77,8 +77,8 @@ class AIController {
         };
       }
 
-      // Get AI response
-      const {answer, tokensUsed} = await aiService.askTutor(question, context);
+      // Get AI response with lesson context
+      const {answer, tokensUsed} = await aiService.askTutor(question, context, lessonContext);
 
       // Log the interaction for analytics
       await supabase.from('voice_interactions').insert({
