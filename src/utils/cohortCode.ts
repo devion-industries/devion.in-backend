@@ -35,10 +35,10 @@ export async function generateUniqueCode(maxAttempts: number = 10): Promise<stri
       .from('cohorts')
       .select('id')
       .eq('entry_code', code)
-      .single();
+      .maybeSingle(); // Use maybeSingle() instead of single() to avoid 406 errors
     
-    // If no data found (and no error except for PGRST116 which means no rows), code is unique
-    if (!data && (!error || error.code === 'PGRST116')) {
+    // If no data found, code is unique
+    if (!data) {
       return code;
     }
   }
