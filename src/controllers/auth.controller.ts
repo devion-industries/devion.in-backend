@@ -67,6 +67,12 @@ class AuthController {
         throw createError('Failed to create user', 500);
       }
       
+      // Generate referral code (required field)
+      // Format: First 6 chars of name + last 4 chars of UUID
+      const namePrefix = trimmedName.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 6).padEnd(6, 'X');
+      const uuidSuffix = authData.user.id.split('-').pop()!.substring(0, 4).toUpperCase();
+      const referralCode = `${namePrefix}-${uuidSuffix}`;
+      
       // Create user profile
       const { data: user, error: userError } = await supabase
         .from('users')
@@ -77,7 +83,8 @@ class AuthController {
           phone,
           school,
           age,
-          user_type: accountType
+          user_type: accountType,
+          referral_code: referralCode
         })
         .select()
         .single();
