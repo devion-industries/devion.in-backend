@@ -30,6 +30,8 @@ class CohortController {
       const entryCode = await generateUniqueCode();
 
       // Create cohort
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      
       const { data: cohort, error } = await supabase
         .from('cohorts')
         .insert({
@@ -39,6 +41,7 @@ class CohortController {
           grade,
           subject,
           entry_code: entryCode,
+          start_date: today, // Required field
           default_budget: default_budget || 10000,
           allow_custom_budget: allow_custom_budget !== false, // default true
           restricted_stocks: restricted_stocks || false,
