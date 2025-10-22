@@ -248,7 +248,7 @@ class AuthController {
         throw createError('Failed to update onboarding status', 500);
       }
       
-      logger.info(`User completed onboarding: ${req.user!.email}${alias ? ` with alias: ${trimmedAlias}` : ''}`);
+      logger.info(`User completed onboarding: ${req.user!.email}${updateData.alias ? ` with alias: ${updateData.alias}` : ''}`);
       
       res.json({
         message: 'Onboarding completed successfully',
