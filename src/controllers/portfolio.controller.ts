@@ -221,12 +221,12 @@ class PortfolioController {
       }
       
       // Update or create holding
-      const { data: existingHolding } = await supabase
+      const { data: existingHolding, error: holdingCheckError } = await supabase
         .from('holdings')
         .select('*')
         .eq('portfolio_id', portfolio.id)
         .eq('symbol', stock.symbol)
-        .single();
+        .maybeSingle(); // Use maybeSingle to handle zero rows gracefully
       
       if (existingHolding) {
         // Update existing holding - calculate new average price
@@ -335,12 +335,12 @@ class PortfolioController {
       }
       
       // Check if user has this holding
-      const { data: holding } = await supabase
+      const { data: holding, error: holdingError } = await supabase
         .from('holdings')
         .select('*')
         .eq('portfolio_id', portfolio.id)
         .eq('symbol', stock.symbol)
-        .single();
+        .maybeSingle();
       
       if (!holding || holding.quantity < quantity) {
         throw createError(
