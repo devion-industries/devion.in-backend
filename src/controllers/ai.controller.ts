@@ -36,7 +36,7 @@ class AIController {
         // Get detailed holdings with stock info
         const { data: holdings } = await supabase
           .from('holdings')
-          .select('*, stocks(company_name, sector, current_price)')
+          .select('*, stocks(company_name, sector)')
           .eq('portfolio_id', portfolio.id)
           .gt('quantity', 0);
 
@@ -61,9 +61,9 @@ class AIController {
             sector: h.stocks?.sector || 'Other',
             quantity: h.quantity,
             avgCost: h.avg_buy_price,
-            currentPrice: h.stocks?.current_price || h.avg_buy_price,
+            currentPrice: h.avg_buy_price, // Use avg_buy_price as current price approximation
             invested: h.avg_buy_price * h.quantity,
-            currentValue: (h.stocks?.current_price || h.avg_buy_price) * h.quantity,
+            currentValue: h.current_value || (h.avg_buy_price * h.quantity),
             gainLoss: h.gain_loss || 0,
             gainLossPercent: h.gain_loss_percent || 0,
           })) || [],
