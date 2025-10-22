@@ -26,19 +26,56 @@ class AIController {
       // Get user's portfolio context for more personalized responses
       const { data: portfolio } = await supabase
         .from('portfolios')
-        .select('*, holdings(*)')
+        .select('*')
         .eq('user_id', userId)
         .single();
 
-      const context = portfolio ? {
-        userId,
-        portfolioValue: portfolio.total_value,
-        holdings: portfolio.holdings?.map((h: any) => ({
-          symbol: h.symbol,
-          quantity: h.quantity,
-          gainLoss: h.gain_loss_percent || 0,
-        })),
-      } : undefined;
+      let context = undefined;
+
+      if (portfolio) {
+        // Get detailed holdings with stock info
+        const { data: holdings } = await supabase
+          .from('holdings')
+          .select('*, stocks(company_name, sector, current_price)')
+          .eq('portfolio_id', portfolio.id)
+          .gt('quantity', 0);
+
+        // Get recent trades (last 5)
+        const { data: recentTrades } = await supabase
+          .from('trades')
+          .select('symbol, type, quantity, price, executed_at')
+          .eq('user_id', userId)
+          .order('executed_at', { ascending: false })
+          .limit(5);
+
+        // Build rich context
+        context = {
+          userId,
+          budget: portfolio.budget_amount,
+          portfolioValue: portfolio.total_value,
+          cashAvailable: portfolio.current_cash,
+          totalInvested: holdings?.reduce((sum: number, h: any) => sum + (h.avg_buy_price * h.quantity), 0) || 0,
+          holdings: holdings?.map((h: any) => ({
+            symbol: h.symbol,
+            companyName: h.stocks?.company_name || h.symbol,
+            sector: h.stocks?.sector || 'Other',
+            quantity: h.quantity,
+            avgCost: h.avg_buy_price,
+            currentPrice: h.stocks?.current_price || h.avg_buy_price,
+            invested: h.avg_buy_price * h.quantity,
+            currentValue: (h.stocks?.current_price || h.avg_buy_price) * h.quantity,
+            gainLoss: h.gain_loss || 0,
+            gainLossPercent: h.gain_loss_percent || 0,
+          })) || [],
+          recentTrades: recentTrades?.map((t: any) => ({
+            symbol: t.symbol,
+            type: t.type,
+            quantity: t.quantity,
+            price: t.price,
+            when: t.executed_at,
+          })) || [],
+        };
+      }
 
       // Get AI response
       const {answer, tokensUsed} = await aiService.askTutor(question, context);

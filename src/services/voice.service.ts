@@ -95,8 +95,23 @@ class VoiceService {
     question: string,
     context?: {
       userId?: string;
+      budget?: number;
       portfolioValue?: number;
-      holdings?: Array<{ symbol: string; quantity: number; gainLoss: number }>;
+      cashAvailable?: number;
+      totalInvested?: number;
+      holdings?: Array<{ 
+        symbol: string; 
+        companyName: string;
+        sector: string;
+        quantity: number; 
+        avgCost: number;
+        currentPrice: number;
+        invested: number;
+        currentValue: number;
+        gainLoss: number;
+        gainLossPercent: number;
+      }>;
+      recentTrades?: Array<{ symbol: string; type: string; quantity: number; price: number; when: string }>;
     },
     voiceType: 'teacher' | 'professional' | 'energetic' | 'calm' = 'teacher'
   ): Promise<{

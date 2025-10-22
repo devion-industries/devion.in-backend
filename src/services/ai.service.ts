@@ -120,9 +120,23 @@ class AIService {
     question: string,
     context?: {
       userId?: string;
+      budget?: number;
       portfolioValue?: number;
-      holdings?: Array<{ symbol: string; quantity: number; gainLoss: number }>;
-      recentTrades?: Array<{ symbol: string; type: string; quantity: number; price: number }>;
+      cashAvailable?: number;
+      totalInvested?: number;
+      holdings?: Array<{ 
+        symbol: string; 
+        companyName: string;
+        sector: string;
+        quantity: number; 
+        avgCost: number;
+        currentPrice: number;
+        invested: number;
+        currentValue: number;
+        gainLoss: number;
+        gainLossPercent: number;
+      }>;
+      recentTrades?: Array<{ symbol: string; type: string; quantity: number; price: number; when: string }>;
     }
   ): Promise<{ answer: string; tokensUsed: number; cached?: boolean }> {
     try {
@@ -142,18 +156,66 @@ class AIService {
         logger.info(`AI cache MISS for question: "${question.substring(0, 50)}..."`);
       }
 
-      // Build context-aware prompt
+      // Build rich context-aware prompt
       let userContext = '';
-      if (context) {
-        if (context.portfolioValue) {
-          userContext += `\n\nUser's Portfolio Context:\n- Total Value: ₹${context.portfolioValue.toLocaleString('en-IN')}`;
-        }
+      if (context && context.portfolioValue) {
+        userContext = `\n\n===== STUDENT'S PORTFOLIO DATA =====\n`;
+        
+        // Portfolio summary
+        userContext += `\n📊 Portfolio Summary:\n`;
+        userContext += `- Starting Budget: ₹${(context.budget || 10000).toLocaleString('en-IN')}\n`;
+        userContext += `- Total Portfolio Value: ₹${context.portfolioValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+        userContext += `- Cash Available: ₹${(context.cashAvailable || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+        userContext += `- Total Invested: ₹${(context.totalInvested || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+        
+        const totalPnL = context.portfolioValue - (context.budget || 10000);
+        const totalPnLPercent = ((totalPnL / (context.budget || 10000)) * 100);
+        userContext += `- Overall P&L: ₹${totalPnL.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${totalPnLPercent >= 0 ? '+' : ''}${totalPnLPercent.toFixed(2)}%)\n`;
+
+        // Holdings details
         if (context.holdings && context.holdings.length > 0) {
-          userContext += `\n- Holdings: ${context.holdings.map(h => `${h.symbol} (${h.quantity} shares, ${h.gainLoss >= 0 ? '+' : ''}${h.gainLoss.toFixed(2)}%)`).join(', ')}`;
+          userContext += `\n📈 Current Holdings (${context.holdings.length}):\n`;
+          context.holdings.forEach((h, idx) => {
+            userContext += `${idx + 1}. ${h.companyName} (${h.symbol}) - ${h.sector}\n`;
+            userContext += `   • Quantity: ${h.quantity} shares\n`;
+            userContext += `   • Avg Cost: ₹${h.avgCost.toFixed(2)}/share | Current: ₹${h.currentPrice.toFixed(2)}/share\n`;
+            userContext += `   • Invested: ₹${h.invested.toFixed(2)} → Current Value: ₹${h.currentValue.toFixed(2)}\n`;
+            userContext += `   • P&L: ₹${h.gainLoss.toFixed(2)} (${h.gainLossPercent >= 0 ? '+' : ''}${h.gainLossPercent.toFixed(2)}%)\n`;
+          });
+
+          // Sector diversification
+          const sectorMap = new Map<string, number>();
+          context.holdings.forEach(h => {
+            const current = sectorMap.get(h.sector) || 0;
+            sectorMap.set(h.sector, current + h.currentValue);
+          });
+          
+          userContext += `\n🎯 Sector Allocation:\n`;
+          Array.from(sectorMap.entries())
+            .sort((a, b) => b[1] - a[1])
+            .forEach(([sector, value]) => {
+              const percent = (value / context.totalInvested!) * 100;
+              userContext += `   • ${sector}: ₹${value.toFixed(2)} (${percent.toFixed(1)}%)\n`;
+            });
+        } else {
+          userContext += `\n📈 Current Holdings: None yet (full budget available for trading)\n`;
         }
+
+        // Recent trading activity
         if (context.recentTrades && context.recentTrades.length > 0) {
-          userContext += `\n- Recent Trades: ${context.recentTrades.map(t => `${t.type} ${t.quantity} ${t.symbol} @ ₹${t.price}`).join(', ')}`;
+          userContext += `\n📝 Recent Trades (Last ${Math.min(context.recentTrades.length, 5)}):\n`;
+          context.recentTrades.forEach((t, idx) => {
+            const timeAgo = new Date(t.when);
+            const hoursAgo = Math.floor((Date.now() - timeAgo.getTime()) / (1000 * 60 * 60));
+            const timeStr = hoursAgo < 1 ? 'Just now' : hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.floor(hoursAgo / 24)}d ago`;
+            userContext += `${idx + 1}. ${t.type} ${t.quantity} × ${t.symbol} @ ₹${t.price.toFixed(2)} (${timeStr})\n`;
+          });
+        } else {
+          userContext += `\n📝 Recent Trades: No trades yet\n`;
         }
+
+        userContext += `\n===================================\n`;
+        userContext += `\nUse this portfolio data to give personalized, contextual advice. Reference their actual holdings, sectors, P&L, and trading activity when relevant.`;
       }
 
       const response = await openai.chat.completions.create({
