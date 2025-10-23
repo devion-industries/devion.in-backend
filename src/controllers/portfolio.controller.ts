@@ -7,6 +7,43 @@ import logger from '../utils/logger';
 
 class PortfolioController {
   /**
+   * Helper function to calculate total portfolio value
+   * Returns: cash + current value of all holdings
+   */
+  private async calculateTotalPortfolioValue(portfolioId: string, currentCash: number): Promise<number> {
+    try {
+      // Get all holdings
+      const { data: holdings } = await supabase
+        .from('holdings')
+        .select('symbol, quantity, avg_buy_price')
+        .eq('portfolio_id', portfolioId)
+        .gt('quantity', 0);
+
+      if (!holdings || holdings.length === 0) {
+        return currentCash; // Only cash, no holdings
+      }
+
+      // Get current prices for all holdings
+      const symbols = holdings.map(h => h.symbol);
+      const quotes = await yahooService.getQuote(symbols);
+
+      // Calculate total holdings value with current prices
+      let holdingsValue = 0;
+      holdings.forEach(holding => {
+        const quote = quotes[`NSE:${holding.symbol}`];
+        const currentPrice = quote?.last_price || holding.avg_buy_price; // Fallback to avg price if quote unavailable
+        holdingsValue += currentPrice * holding.quantity;
+      });
+
+      return currentCash + holdingsValue;
+    } catch (error) {
+      logger.error('Error calculating portfolio value:', error);
+      // Return cash only if calculation fails
+      return currentCash;
+    }
+  }
+
+  /**
    * Get user's portfolio summary
    */
   async getPortfolio(req: AuthRequest, res: Response, next: NextFunction) {
@@ -268,13 +305,15 @@ class PortfolioController {
         }
       }
       
-      // Update portfolio cash
+      // Update portfolio cash and calculate correct total value
       const newCash = portfolio.current_cash - totalCost;
+      const totalValue = await this.calculateTotalPortfolioValue(portfolio.id, newCash);
+      
       const { error: portfolioError } = await supabase
         .from('portfolios')
         .update({
           current_cash: newCash,
-          total_value: newCash + totalCost, // Approximate - will be recalculated
+          total_value: totalValue, // Correctly calculated: cash + all holdings
           updated_at: tradeDate
         })
         .eq('id', portfolio.id);
@@ -410,12 +449,15 @@ class PortfolioController {
           .eq('id', holding.id);
       }
       
-      // Update portfolio cash
+      // Update portfolio cash and calculate correct total value
       const newCash = portfolio.current_cash + totalRevenue;
+      const totalValue = await this.calculateTotalPortfolioValue(portfolio.id, newCash);
+      
       await supabase
         .from('portfolios')
         .update({
           current_cash: newCash,
+          total_value: totalValue, // Correctly calculated: cash + all holdings
           updated_at: tradeDate
         })
         .eq('id', portfolio.id);
