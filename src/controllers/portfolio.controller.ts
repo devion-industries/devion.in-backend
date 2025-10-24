@@ -233,114 +233,186 @@ class PortfolioController {
         );
       }
       
-      // Execute trade
+      // Execute trade with rollback on failure
       const tradeDate = new Date().toISOString();
+      let createdTrade: any = null;
+      let createdOrUpdatedHolding = false;
+      let updatedPortfolio = false;
       
-      // Create trade record
-      const { data: trade, error: tradeError } = await supabase
-        .from('trades')
-        .insert({
-          user_id: userId,
-          portfolio_id: portfolio.id,
-          symbol: stock.symbol,
-          type: 'BUY',
-          quantity: quantity,
-          price: currentPrice,
-          total_amount: totalCost,
-          executed_at: tradeDate
-        })
-        .select()
-        .single();
-      
-      if (tradeError) {
-        logger.error('Buy trade creation error:', tradeError);
-        throw createError(`Failed to create trade record: ${tradeError.message || tradeError.code}`, 500);
-      }
-      
-      // Update or create holding
-      const { data: existingHolding, error: holdingCheckError } = await supabase
-        .from('holdings')
-        .select('*')
-        .eq('portfolio_id', portfolio.id)
-        .eq('symbol', stock.symbol)
-        .maybeSingle(); // Use maybeSingle to handle zero rows gracefully
-      
-      if (existingHolding) {
-        // Update existing holding - calculate new average price
-        const newTotalQuantity = existingHolding.quantity + quantity;
-        const newTotalValue = (existingHolding.avg_buy_price * existingHolding.quantity) + totalCost;
-        const newAveragePrice = newTotalValue / newTotalQuantity;
-        
-        const { error: updateError } = await supabase
-          .from('holdings')
-          .update({
-            quantity: newTotalQuantity,
-            avg_buy_price: newAveragePrice,
-            current_value: newAveragePrice * newTotalQuantity,
-            last_updated: tradeDate
-          })
-          .eq('id', existingHolding.id);
-        
-        if (updateError) {
-          logger.error('Update holding error:', updateError);
-          throw createError(`Failed to update holding: ${updateError.message}`, 500);
-        }
-      } else {
-        // Create new holding
-        const { error: holdingError } = await supabase
-          .from('holdings')
+      try {
+        // Step 1: Create trade record
+        const { data: trade, error: tradeError } = await supabase
+          .from('trades')
           .insert({
+            user_id: userId,
             portfolio_id: portfolio.id,
             symbol: stock.symbol,
+            type: 'BUY',
             quantity: quantity,
-            avg_buy_price: currentPrice,
-            current_value: totalCost,
-            unrealized_pnl: 0,
-            last_updated: tradeDate
-          });
+            price: currentPrice,
+            total_amount: totalCost,
+            executed_at: tradeDate
+          })
+          .select()
+          .single();
         
-        if (holdingError) {
-          logger.error('Create holding error:', holdingError);
-          throw createError(`Failed to create holding: ${holdingError.message}`, 500);
+        if (tradeError) {
+          logger.error('Buy trade creation error:', tradeError);
+          throw new Error(`Failed to create trade record: ${tradeError.message || tradeError.code}`);
         }
-      }
-      
-      // Update portfolio cash and calculate correct total value
-      const newCash = portfolio.current_cash - totalCost;
-      const totalValue = await this.calculateTotalPortfolioValue(portfolio.id, newCash);
-      
-      const { error: portfolioError } = await supabase
-        .from('portfolios')
-        .update({
-          current_cash: newCash,
-          total_value: totalValue, // Correctly calculated: cash + all holdings
-          updated_at: tradeDate
-        })
-        .eq('id', portfolio.id);
-      
-      if (portfolioError) {
-        logger.error('Update portfolio error:', portfolioError);
-        throw createError(`Failed to update portfolio: ${portfolioError.message}`, 500);
-      }
-      
-      logger.info(`User ${userId} bought ${quantity} shares of ${symbol} at ₹${currentPrice}`);
-      
-      res.json({
-        message: 'Stock purchased successfully',
-        trade: {
-          id: trade.id,
-          symbol: stock.symbol,
-          company_name: stock.company_name,
-          quantity: quantity,
-          price: currentPrice,
-          total_cost: totalCost,
-          trade_date: tradeDate
-        },
-        portfolio: {
-          current_cash: newCash,
-          cash_spent: totalCost
+        
+        createdTrade = trade;
+        
+        // Step 2: Update or create holding
+        const { data: existingHolding } = await supabase
+          .from('holdings')
+          .select('*')
+          .eq('portfolio_id', portfolio.id)
+          .eq('symbol', stock.symbol)
+          .maybeSingle();
+        
+        if (existingHolding) {
+          // Update existing holding
+          const newTotalQuantity = existingHolding.quantity + quantity;
+          const newTotalValue = (existingHolding.avg_buy_price * existingHolding.quantity) + totalCost;
+          const newAveragePrice = newTotalValue / newTotalQuantity;
+          
+          const { error: updateError } = await supabase
+            .from('holdings')
+            .update({
+              quantity: newTotalQuantity,
+              avg_buy_price: newAveragePrice,
+              current_value: newAveragePrice * newTotalQuantity,
+              last_updated: tradeDate
+            })
+            .eq('id', existingHolding.id);
+          
+          if (updateError) {
+            throw new Error(`Failed to update holding: ${updateError.message}`);
+          }
+        } else {
+          // Create new holding
+          const { error: holdingError } = await supabase
+            .from('holdings')
+            .insert({
+              portfolio_id: portfolio.id,
+              symbol: stock.symbol,
+              quantity: quantity,
+              avg_buy_price: currentPrice,
+              current_value: totalCost,
+              unrealized_pnl: 0,
+              last_updated: tradeDate
+            });
+          
+          if (holdingError) {
+            throw new Error(`Failed to create holding: ${holdingError.message}`);
+          }
         }
-      });
+        
+        createdOrUpdatedHolding = true;
+        
+        // Step 3: Update portfolio cash and total value
+        const newCash = portfolio.current_cash - totalCost;
+        const totalValue = await this.calculateTotalPortfolioValue(portfolio.id, newCash);
+        
+        const { error: portfolioError } = await supabase
+          .from('portfolios')
+          .update({
+            current_cash: newCash,
+            total_value: totalValue,
+            updated_at: tradeDate
+          })
+          .eq('id', portfolio.id);
+        
+        if (portfolioError) {
+          throw new Error(`Failed to update portfolio: ${portfolioError.message}`);
+        }
+        
+        updatedPortfolio = true;
+        
+        logger.info(`✅ User ${userId} bought ${quantity} shares of ${symbol} at ₹${currentPrice}`);
+        
+        res.json({
+          message: 'Stock purchased successfully',
+          trade: {
+            id: createdTrade.id,
+            symbol: stock.symbol,
+            company_name: stock.company_name,
+            quantity: quantity,
+            price: currentPrice,
+            total_cost: totalCost,
+            trade_date: tradeDate
+          },
+          portfolio: {
+            current_cash: newCash,
+            cash_spent: totalCost
+          }
+        });
+        
+      } catch (rollbackError: any) {
+        // Rollback on any failure
+        logger.error('❌ Trade execution failed, rolling back:', rollbackError);
+        
+        // Rollback portfolio update
+        if (updatedPortfolio) {
+          await supabase
+            .from('portfolios')
+            .update({
+              current_cash: portfolio.current_cash,
+              total_value: portfolio.total_value
+            })
+            .eq('id', portfolio.id);
+          logger.info('↩️  Rolled back portfolio update');
+        }
+        
+        // Rollback holding (restore previous or delete new)
+        if (createdOrUpdatedHolding) {
+          const { data: currentHolding } = await supabase
+            .from('holdings')
+            .select('*')
+            .eq('portfolio_id', portfolio.id)
+            .eq('symbol', stock.symbol)
+            .maybeSingle();
+          
+          if (currentHolding) {
+            // Check if this was a new holding or updated one
+            if (currentHolding.quantity === quantity) {
+              // Was newly created, delete it
+              await supabase
+                .from('holdings')
+                .delete()
+                .eq('id', currentHolding.id);
+              logger.info('↩️  Rolled back holding creation');
+            } else {
+              // Was updated, restore previous values
+              const originalQuantity = currentHolding.quantity - quantity;
+              const originalValue = (currentHolding.avg_buy_price * currentHolding.quantity) - totalCost;
+              const originalAvgPrice = originalValue / originalQuantity;
+              
+              await supabase
+                .from('holdings')
+                .update({
+                  quantity: originalQuantity,
+                  avg_buy_price: originalAvgPrice,
+                  current_value: originalValue
+                })
+                .eq('id', currentHolding.id);
+              logger.info('↩️  Rolled back holding update');
+            }
+          }
+        }
+        
+        // Rollback trade creation
+        if (createdTrade) {
+          await supabase
+            .from('trades')
+            .delete()
+            .eq('id', createdTrade.id);
+          logger.info('↩️  Rolled back trade creation');
+        }
+        
+        throw createError(`Trade failed: ${rollbackError.message}`, 500);
+      }
     } catch (error) {
       next(error);
     }
