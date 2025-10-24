@@ -611,6 +611,7 @@ class PortfolioController {
         return {
           ...holding,
           stock_name: stock?.company_name || holding.symbol,
+          sector: stock?.sector || 'Other',
           current_price: currentPrice,
           invested_value: invested,
           current_value: value,
