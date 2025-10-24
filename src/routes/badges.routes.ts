@@ -12,21 +12,21 @@ router.use(authenticate);
  * @desc    Get all badges with user progress
  * @access  Private
  */
-router.get('/', badgesController.getAllBadges);
+router.get('/', badgesController.getAllBadges.bind(badgesController));
 
 /**
  * @route   GET /api/badges/unlocked
  * @desc    Get user's unlocked badges
  * @access  Private
  */
-router.get('/unlocked', badgesController.getUserBadges);
+router.get('/unlocked', badgesController.getUserBadges.bind(badgesController));
 
 /**
  * @route   POST /api/badges/check
  * @desc    Check and unlock eligible badges for user
  * @access  Private
  */
-router.post('/check', badgesController.checkAndUnlockBadges);
+router.post('/check', badgesController.checkAndUnlockBadges.bind(badgesController));
 
 export default router;
 
