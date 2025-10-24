@@ -8,17 +8,17 @@ const router = express.Router();
 router.use(authenticate);
 
 // Portfolio management
-router.get('/', portfolioController.getPortfolio);
-router.get('/holdings', portfolioController.getHoldings);
-router.get('/trades', portfolioController.getTradeHistory);
-router.get('/performance', portfolioController.getPerformance);
+router.get('/', portfolioController.getPortfolio.bind(portfolioController));
+router.get('/holdings', portfolioController.getHoldings.bind(portfolioController));
+router.get('/trades', portfolioController.getTradeHistory.bind(portfolioController));
+router.get('/performance', portfolioController.getPerformance.bind(portfolioController));
 
 // Budget management
-router.put('/budget', portfolioController.updateBudget);
-router.get('/budget/history', portfolioController.getBudgetHistory);
+router.put('/budget', portfolioController.updateBudget.bind(portfolioController));
+router.get('/budget/history', portfolioController.getBudgetHistory.bind(portfolioController));
 
 // Trading
-router.post('/buy', portfolioController.buyStock);
-router.post('/sell', portfolioController.sellStock);
+router.post('/buy', portfolioController.buyStock.bind(portfolioController));
+router.post('/sell', portfolioController.sellStock.bind(portfolioController));
 
 export default router;
