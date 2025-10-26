@@ -20,8 +20,9 @@ import aiRoutes from './routes/ai.routes';
 import voiceRoutes from './routes/voice.routes';
 import badgesRoutes from './routes/badges.routes';
 import subscriptionRoutes from './routes/subscription.routes';
-import cohortRoutes from './routes/cohort.routes';
+// import cohortRoutes from './routes/cohort.routes'; // ❌ DEPRECATED: Teacher cohorts removed
 import leaderboardRoutes from './routes/leaderboard.routes';
+import friendGroupsRoutes from './routes/friendGroups.routes'; // ✅ NEW: Friend groups system
 
 // Validate environment variables
 try {
@@ -62,8 +63,9 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/voice', voiceRoutes);
 app.use('/api/badges', badgesRoutes);
 app.use('/api/subscription', subscriptionRoutes);
-app.use('/api/cohorts', cohortRoutes);
+// app.use('/api/cohorts', cohortRoutes); // ❌ DEPRECATED: Teacher cohorts removed
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/friend-groups', friendGroupsRoutes); // ✅ NEW: Friend groups system
 app.use('/api/user', require('./routes/user.routes').default);
 
 // 404 handler

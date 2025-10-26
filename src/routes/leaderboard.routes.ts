@@ -9,7 +9,7 @@ router.use(authenticate);
 
 // Leaderboard endpoints
 router.get('/global', leaderboardController.getGlobalLeaderboard.bind(leaderboardController));
-router.get('/cohort/:cohortId', leaderboardController.getCohortLeaderboard.bind(leaderboardController));
+// router.get('/cohort/:cohortId', leaderboardController.getCohortLeaderboard.bind(leaderboardController)); // ❌ DEPRECATED: Cohorts removed
 router.get('/friends', leaderboardController.getFriendsLeaderboard.bind(leaderboardController));
 router.get('/my-rank', leaderboardController.getMyRank.bind(leaderboardController));
 
