@@ -41,7 +41,7 @@ class AuthController {
       }
       
       // Validate budget if provided (only for students)
-      const budgetAmount = accountType === 'student' ? (initial_budget || 10000) : 0;
+      const budgetAmount = accountType === 'student' ? (initial_budget || 100000) : 0;
       if (accountType === 'student' && (budgetAmount < 1000 || budgetAmount > 10000000)) {
         throw createError('Budget must be between ₹1,000 and ₹1,00,00,000', 400);
       }
