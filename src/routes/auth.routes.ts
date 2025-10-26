@@ -8,6 +8,7 @@ const router = express.Router();
 router.post('/signup', authController.signup.bind(authController));
 router.post('/login', authController.login.bind(authController));
 router.post('/refresh', authController.refreshToken);
+router.get('/check-alias', authController.checkAliasAvailability.bind(authController));
 
 // Protected routes
 router.get('/me', authenticate, authController.getMe);

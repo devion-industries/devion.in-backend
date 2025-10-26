@@ -331,6 +331,69 @@ class AuthController {
       next(createError('Invalid refresh token', 401));
     }
   }
+
+  /**
+   * Check if alias is available
+   * GET /api/auth/check-alias?alias=username
+   */
+  async checkAliasAvailability(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { alias } = req.query;
+      
+      if (!alias || typeof alias !== 'string') {
+        throw createError('Alias is required', 400);
+      }
+
+      const trimmedAlias = alias.trim();
+      
+      // Validate alias format
+      if (trimmedAlias.length < 3) {
+        return res.json({
+          available: false,
+          message: 'Alias must be at least 3 characters'
+        });
+      }
+
+      if (trimmedAlias.length > 20) {
+        return res.json({
+          available: false,
+          message: 'Alias must be 20 characters or less'
+        });
+      }
+
+      // Only allow alphanumeric and underscores
+      const aliasRegex = /^[a-zA-Z0-9_]+$/;
+      if (!aliasRegex.test(trimmedAlias)) {
+        return res.json({
+          available: false,
+          message: 'Alias can only contain letters, numbers, and underscores'
+        });
+      }
+
+      // Check if alias is already taken (case-insensitive)
+      const { data, error } = await supabaseAdmin
+        .from('users')
+        .select('alias')
+        .ilike('alias', trimmedAlias)
+        .limit(1);
+
+      if (error) {
+        logger.error('Error checking alias availability:', error);
+        throw createError('Failed to check alias availability', 500);
+      }
+
+      const available = !data || data.length === 0;
+
+      res.json({
+        available,
+        message: available 
+          ? 'Alias is available!' 
+          : 'This alias is already taken'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const authController = new AuthController();
