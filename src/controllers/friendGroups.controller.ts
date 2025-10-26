@@ -379,7 +379,7 @@ class FriendGroupsController {
       // Get leaderboard using database function
       const { data, error } = await supabase.rpc('get_group_leaderboard', {
         p_group_id: groupId,
-        current_user_id: userId,
+        p_current_user_id: userId,
       });
 
       if (error) {
