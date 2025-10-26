@@ -23,6 +23,7 @@ import subscriptionRoutes from './routes/subscription.routes';
 // import cohortRoutes from './routes/cohort.routes'; // ❌ DEPRECATED: Teacher cohorts removed
 import leaderboardRoutes from './routes/leaderboard.routes';
 import friendGroupsRoutes from './routes/friendGroups.routes'; // ✅ NEW: Friend groups system
+import reportsRoutes from './routes/reports.routes';
 
 // Validate environment variables
 try {
@@ -66,6 +67,7 @@ app.use('/api/subscription', subscriptionRoutes);
 // app.use('/api/cohorts', cohortRoutes); // ❌ DEPRECATED: Teacher cohorts removed
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/friend-groups', friendGroupsRoutes); // ✅ NEW: Friend groups system
+app.use('/api/reports', reportsRoutes);
 app.use('/api/user', require('./routes/user.routes').default);
 
 // 404 handler
