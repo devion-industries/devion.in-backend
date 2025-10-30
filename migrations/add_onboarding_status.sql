@@ -15,3 +15,5 @@ UPDATE users SET onboarding_completed = TRUE WHERE created_at < NOW();
 COMMENT ON COLUMN users.onboarding_completed IS 'Whether user has completed onboarding flow';
 COMMENT ON COLUMN user_profiles.onboarding_completed IS 'Whether user has completed onboarding flow';
 
+
+

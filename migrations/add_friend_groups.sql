@@ -170,3 +170,5 @@ SELECT generate_group_code() AS sample_code;
 -- Indexes: Created for entry_code, created_by, group_id, user_id
 -- Triggers: Auto-update updated_at on friend_groups
 
+
+

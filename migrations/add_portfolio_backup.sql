@@ -40,3 +40,5 @@ COMMENT ON COLUMN portfolio_backups.backup_data IS 'JSONB snapshot of portfolio:
 COMMENT ON COLUMN portfolios.cohort_id IS 'If set, this portfolio belongs to a cohort';
 COMMENT ON COLUMN portfolios.is_cohort_portfolio IS 'True if portfolio was created for a cohort';
 
+
+

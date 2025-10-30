@@ -22,3 +22,5 @@ END $$;
 
 COMMENT ON COLUMN users.user_type IS 'Type of user account: student, parent, or teacher';
 
+
+

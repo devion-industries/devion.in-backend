@@ -46,3 +46,5 @@ FROM portfolios p
 LEFT JOIN holdings h ON p.user_id = h.portfolio_id
 GROUP BY p.user_id, p.budget_amount, p.current_cash;
 
+
+

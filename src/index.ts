@@ -1,3 +1,8 @@
+// Sentry must be imported and initialized first
+import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
+import { setupExpressErrorHandler, expressIntegration } from '@sentry/node';
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -5,6 +10,20 @@ import compression from 'compression';
 import { config, validateEnv } from './config/env';
 import logger from './utils/logger';
 import { redisService } from './services/redis.service';
+
+// Initialize Sentry for error tracking and performance monitoring
+Sentry.init({
+  dsn: "https://4a6ad47652796f193d5197506705aa31@o4510279217250304.ingest.de.sentry.io/4510279229112400",
+  integrations: [
+    nodeProfilingIntegration(),
+    expressIntegration(),
+  ],
+  // Performance Monitoring
+  tracesSampleRate: 0.1, // Capture 10% of transactions
+  // Profiling
+  profilesSampleRate: 0.1, // Capture 10% of profiles
+  environment: config.nodeEnv,
+});
 
 // Middleware imports
 import { errorHandler } from './middleware/errorHandler';
@@ -75,7 +94,10 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Error handler (must be last)
+// Sentry error handler MUST be before custom error handlers
+setupExpressErrorHandler(app);
+
+// Custom error handler (must be last)
 app.use(errorHandler);
 
 // Initialize Redis connection
@@ -95,10 +117,12 @@ app.listen(PORT, () => {
 // Handle unhandled rejections
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  Sentry.captureException(reason);
 });
 
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
+  Sentry.captureException(error);
   process.exit(1);
 });
 
@@ -106,12 +130,14 @@ process.on('uncaughtException', (error) => {
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully...');
   await redisService.disconnect();
+  await Sentry.close(2000); // Wait up to 2 seconds to flush events
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully...');
   await redisService.disconnect();
+  await Sentry.close(2000); // Wait up to 2 seconds to flush events
   process.exit(0);
 });
 

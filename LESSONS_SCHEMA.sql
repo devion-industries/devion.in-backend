@@ -394,3 +394,5 @@ COMMENT ON TABLE lesson_tags IS 'Tags for filtering and categorizing lessons';
 -- END OF SCHEMA
 -- ============================================
 
+
+
