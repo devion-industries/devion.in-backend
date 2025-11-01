@@ -1,4 +1,5 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { AuthRequest } from '../middleware/auth';
 import { PortfolioHistoryService } from '../services/portfolioHistory.service';
 import logger from '../utils/logger';
 
@@ -7,7 +8,7 @@ export class PortfolioHistoryController {
    * GET /api/portfolio/history
    * Get portfolio historical data
    */
-  static async getHistory(req: Request, res: Response): Promise<void> {
+  static async getHistory(req: AuthRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -49,7 +50,7 @@ export class PortfolioHistoryController {
    * POST /api/portfolio/snapshot
    * Manually trigger a snapshot (for testing or after trades)
    */
-  static async takeSnapshot(req: Request, res: Response): Promise<void> {
+  static async takeSnapshot(req: AuthRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -77,7 +78,7 @@ export class PortfolioHistoryController {
    * GET /api/portfolio/snapshot/latest
    * Get the most recent snapshot
    */
-  static async getLatestSnapshot(req: Request, res: Response): Promise<void> {
+  static async getLatestSnapshot(req: AuthRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
       if (!userId) {
