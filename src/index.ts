@@ -28,6 +28,7 @@ Sentry.init({
 // Middleware imports
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/logger';
+import { apiRateLimiter } from './middleware/rateLimiter';
 
 // Route imports
 import authRoutes from './routes/auth.routes';
@@ -68,7 +69,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Request logging
 app.use(requestLogger);
 
-// Health check endpoint
+// General API rate limiting (applies to all routes)
+app.use('/api/', apiRateLimiter);
+
+// Health check endpoint (no rate limit)
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });

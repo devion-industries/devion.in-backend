@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticate } from '../middleware/auth';
 import { portfolioController } from '../controllers/portfolio.controller';
+import { tradingRateLimiter } from '../middleware/rateLimiter';
 
 const router = express.Router();
 
@@ -17,8 +18,8 @@ router.get('/performance', portfolioController.getPerformance.bind(portfolioCont
 router.put('/budget', portfolioController.updateBudget.bind(portfolioController));
 router.get('/budget/history', portfolioController.getBudgetHistory.bind(portfolioController));
 
-// Trading
-router.post('/buy', portfolioController.buyStock.bind(portfolioController));
-router.post('/sell', portfolioController.sellStock.bind(portfolioController));
+// Trading with rate limiting to prevent spam
+router.post('/buy', tradingRateLimiter, portfolioController.buyStock.bind(portfolioController));
+router.post('/sell', tradingRateLimiter, portfolioController.sellStock.bind(portfolioController));
 
 export default router;
