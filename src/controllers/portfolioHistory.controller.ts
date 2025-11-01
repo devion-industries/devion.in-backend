@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { PortfolioHistoryService } from '../services/portfolioHistory.service';
 import logger from '../utils/logger';
