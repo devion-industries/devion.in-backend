@@ -116,7 +116,7 @@ export class PortfolioHistoryController {
   static async takeAllSnapshots(req: Request, res: Response): Promise<void> {
     try {
       // Check if request has admin authorization
-      const adminKey = req.headers['x-admin-key'] as string;
+      const adminKey = req.get('x-admin-key');
       
       if (adminKey !== process.env.ADMIN_API_KEY) {
         res.status(403).json({ error: { message: 'Forbidden' } });
