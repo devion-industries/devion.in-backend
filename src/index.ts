@@ -110,6 +110,10 @@ redisService.connect().catch((error) => {
   logger.warn('⚠️  Application will continue without Redis caching');
 });
 
+// Initialize cron jobs
+import { startPortfolioSnapshotCron } from './jobs/portfolioSnapshots.cron';
+startPortfolioSnapshotCron();
+
 // Start server
 const PORT = config.port;
 app.listen(PORT, () => {

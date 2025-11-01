@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticate } from '../middleware/auth';
 import { portfolioController } from '../controllers/portfolio.controller';
+import { PortfolioHistoryController } from '../controllers/portfolioHistory.controller';
 import { tradingRateLimiter } from '../middleware/rateLimiter';
 
 const router = express.Router();
@@ -13,6 +14,11 @@ router.get('/', portfolioController.getPortfolio.bind(portfolioController));
 router.get('/holdings', portfolioController.getHoldings.bind(portfolioController));
 router.get('/trades', portfolioController.getTradeHistory.bind(portfolioController));
 router.get('/performance', portfolioController.getPerformance.bind(portfolioController));
+
+// Portfolio history & snapshots
+router.get('/history', PortfolioHistoryController.getHistory);
+router.post('/snapshot', PortfolioHistoryController.takeSnapshot);
+router.get('/snapshot/latest', PortfolioHistoryController.getLatestSnapshot);
 
 // Budget management
 router.put('/budget', portfolioController.updateBudget.bind(portfolioController));

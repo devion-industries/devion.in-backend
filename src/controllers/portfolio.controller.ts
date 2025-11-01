@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { db, supabaseAdmin as supabase } from '../config/database';
 import { yahooService } from '../services/yahoo.service';
+import { PortfolioHistoryService } from '../services/portfolioHistory.service';
 import { createError } from '../middleware/errorHandler';
 import logger from '../utils/logger';
 
@@ -332,6 +333,11 @@ class PortfolioController {
         
         logger.info(`✅ User ${userId} bought ${quantity} shares of ${symbol} at ₹${currentPrice}`);
         
+        // Take snapshot asynchronously (don't wait for it, don't block response)
+        PortfolioHistoryService.takeSnapshot(userId).catch(error => {
+          logger.error('Failed to take snapshot after buy:', error);
+        });
+        
         res.json({
           message: 'Stock purchased successfully',
           trade: {
@@ -535,6 +541,11 @@ class PortfolioController {
         .eq('id', portfolio.id);
       
       logger.info(`User ${userId} sold ${quantity} shares of ${symbol} at ₹${currentPrice}`);
+      
+      // Take snapshot asynchronously (don't wait for it, don't block response)
+      PortfolioHistoryService.takeSnapshot(userId).catch(error => {
+        logger.error('Failed to take snapshot after sell:', error);
+      });
       
       res.json({
         message: 'Stock sold successfully',
