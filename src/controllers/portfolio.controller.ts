@@ -67,9 +67,9 @@ class PortfolioController {
           .from('portfolios')
           .insert({
             user_id: userId,
-            budget_amount: 10000,
-            current_cash: 10000,
-            total_value: 10000,
+            budget_amount: 100000,
+            current_cash: 100000,
+            total_value: 100000,
             custom_budget_enabled: true,
             budget_set_by: userId
           })
@@ -81,16 +81,16 @@ class PortfolioController {
           throw createError('Portfolio not found and could not be created', 404);
         }
         
-        console.log(`✅ [PORTFOLIO] Created new portfolio with ₹10,000`);
+        console.log(`✅ [PORTFOLIO] Created new portfolio with ₹1,00,000`);
         
         // Return newly created portfolio
         return res.json({
           portfolio: {
             id: newPortfolio.id,
             user_id: newPortfolio.user_id,
-            budget_amount: 10000,
-            current_cash: 10000,
-            total_value: 10000,
+            budget_amount: 100000,
+            current_cash: 100000,
+            total_value: 100000,
             total_invested: 0,
             holdings_value: 0,
             total_gain_loss: 0,
